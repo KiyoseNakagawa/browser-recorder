@@ -68,7 +68,7 @@
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
             <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
           </span>
-          <span>現在のファイルの録画時間 (推定サイズ: <span id="estimatedSizeText">0.0</span> MB)</span>
+          <span>現在のファイルの録画時間 (現在のサイズ: <span id="estimatedSizeText">0.0</span> MB)</span>
         </div>
         <p id="partIndicator" class="text-xs text-blue-600 font-bold mt-1 hidden">現在 Part 1 を録画中</p>
       </div>
@@ -168,14 +168,14 @@
           <div class="mt-6 border-t border-gray-100 pt-6">
             <label class="block font-bold text-gray-900 mb-2 flex items-center space-x-2">
               <i data-lucide="clock" class="w-5 h-5 text-gray-500"></i>
-              <span>自動分割設定（※200MB接近時は設定に関わらず自動分割されます）</span>
+              <span>自動分割設定（※実際のサイズが190MBに達したら設定に関わらず自動分割されます）</span>
             </label>
             <select id="autoSplitInterval" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 transition-colors bg-white cursor-pointer shadow-sm">
-              <option value="0">時間では分割しない（手動停止 または 200MB到達時のみ保存）</option>
+              <option value="0">時間では分割しない（手動停止 または 190MB到達時のみ保存）</option>
               <option value="5">5分ごとに自動分割</option>
               <option value="10">10分ごとに自動分割</option>
               <option value="20">20分ごとに自動分割</option>
-              <option value="60" selected>60分ごとに自動分割 (超低画質と合わせて1時間で約180MB)</option>
+              <option value="60" selected>60分ごとに自動分割 (超低画質なら1時間で約160MB・音声込み)</option>
             </select>
           </div>
 
@@ -186,12 +186,20 @@
   </div>
 
   <script>
+    // 映像(bitrate)と音声(audioBitrate)の両方を明示指定し、合計でサイズを見積もる
     const QUALITY_SETTINGS = {
-      high: { label: '高画質', bitrate: 5000000, estimatedPerMin: 37.5, description: '文字や細部までくっきり見えます。' },
-      medium: { label: '標準画質', bitrate: 2500000, estimatedPerMin: 18.75, description: '一般的な会議の録画に最適です。' },
-      low: { label: '低画質', bitrate: 1000000, estimatedPerMin: 7.5, description: '長時間の録画や少し容量を抑えたい場合に。' },
-      veryLow: { label: '超低画質', bitrate: 400000, estimatedPerMin: 3.0, description: '1時間で約180MBに抑えられます。画質よりサイズと長さを優先する場合に最適です。' }
+      high: { label: '高画質', bitrate: 5000000, audioBitrate: 128000, fps: 30, description: '文字や細部までくっきり見えます。' },
+      medium: { label: '標準画質', bitrate: 2500000, audioBitrate: 96000, fps: 30, description: '一般的な会議の録画に最適です。' },
+      low: { label: '低画質', bitrate: 1000000, audioBitrate: 64000, fps: 15, description: '長時間の録画や少し容量を抑えたい場合に。' },
+      veryLow: { label: '超低画質', bitrate: 300000, audioBitrate: 48000, fps: 15, description: '1時間で約170MB以内に抑えます（音声込み）。実際のファイルサイズが190MBに近づくと自動で分割するので、200MBは超えません。' }
     };
+    // 1分あたりの目安サイズ(MB)を映像＋音声の合計から計算
+    for (const s of Object.values(QUALITY_SETTINGS)) {
+      s.estimatedPerMin = +(((s.bitrate + s.audioBitrate) / 8 * 60) / 1000000).toFixed(1);
+    }
+    // 実際のファイルサイズ（バイト）がこれを超えたら自動分割する（200MB制限に対する安全マージン）
+    const SIZE_LIMIT_BYTES = 190 * 1000 * 1000;
+    let currentBytes = 0;
 
     let isRecording = false;
     let quality = 'veryLow'; 
@@ -319,8 +327,7 @@
 
     function updateUI() {
       el('timeDisplay').textContent = formatTime(currentChunkTime);
-      const estSize = ((QUALITY_SETTINGS[quality].bitrate / 8 / 1024 / 1024) * currentChunkTime).toFixed(1);
-      el('estimatedSizeText').textContent = estSize;
+      el('estimatedSizeText').textContent = (currentBytes / 1000 / 1000).toFixed(1);
 
       if (isRecording) {
         el('btnStartGroup').classList.add('hidden');
@@ -410,8 +417,8 @@
         updateUI();
 
         if (!isSplitting) {
-          const estSizeMB = ((QUALITY_SETTINGS[quality].bitrate / 8 / 1024 / 1024) * currentChunkTime);
-          if (estSizeMB >= 190) {
+          // 推定値ではなく、実際に記録されたデータ量で判定する
+          if (currentBytes >= SIZE_LIMIT_BYTES) {
             triggerSplit(true, "ファイルサイズ上限（約190MB）に到達した");
             return;
           }
@@ -534,7 +541,7 @@
 
       try {
         originalDisplayStream = await navigator.mediaDevices.getDisplayMedia({
-          video: { displaySurface: 'browser' },
+          video: { displaySurface: 'browser', frameRate: { ideal: QUALITY_SETTINGS[quality].fps, max: QUALITY_SETTINGS[quality].fps } },
           audio: true, 
         });
 
@@ -592,8 +599,9 @@
           originalDisplayStream.getVideoTracks()[0].addEventListener('ended', stopRecording);
         }
 
+        currentBytes = 0;
         setupMediaRecorder();
-        mediaRecorder.start();
+        mediaRecorder.start(1000); // 1秒ごとにデータを受け取り、実サイズを数える
         isRecording = true;
         startTimer();
         updateUI();
@@ -609,7 +617,10 @@
     }
 
     function setupMediaRecorder() {
-      const options = { videoBitsPerSecond: QUALITY_SETTINGS[quality].bitrate };
+      const options = {
+        videoBitsPerSecond: QUALITY_SETTINGS[quality].bitrate,
+        audioBitsPerSecond: QUALITY_SETTINGS[quality].audioBitrate
+      };
       const codecPref = el('codecPreference').value;
       
       let mimeTypes = [];
@@ -631,7 +642,10 @@
       mediaRecorder = new MediaRecorder(stream, options);
       
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) chunks.push(event.data);
+        if (event.data && event.data.size > 0) {
+          chunks.push(event.data);
+          currentBytes += event.data.size;
+        }
       };
 
       mediaRecorder.onstop = () => {
@@ -653,12 +667,13 @@
 
         if (isSplitting) {
           chunks = [];
-          recordingStartTime = Date.now(); 
+          currentBytes = 0;
+          recordingStartTime = Date.now();
           currentChunkTime = 0;
           currentSplitIndex++;
           try {
             setupMediaRecorder();
-            mediaRecorder.start();
+            mediaRecorder.start(1000);
           } catch(e) {
             showError("分割後の録画再開に失敗しました。");
             finalizeStop();
