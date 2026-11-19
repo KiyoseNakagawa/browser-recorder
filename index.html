@@ -127,6 +127,62 @@
       </div>
     </div>
 
+    <!-- 議事録の準備 -->
+    <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 max-w-3xl mx-auto w-full space-y-6">
+      <div>
+        <div class="flex items-center space-x-2 text-gray-900 font-bold">
+          <i data-lucide="file-text" class="w-5 h-5 text-emerald-600"></i>
+          <span>議事録の準備</span>
+        </div>
+        <p class="text-xs text-gray-500 mt-1">録画リストの「議事録の準備」を押すと、音声（MP3）と依頼文（選んだフォーマット入り）を保存先フォルダーに保存します。</p>
+      </div>
+
+      <div>
+        <label for="meetingTitle" class="block text-sm font-bold text-gray-700 mb-1">会議名（ファイル名と依頼文に入ります）</label>
+        <input id="meetingTitle" type="text" placeholder="例：メディカル本部 定例" class="w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0">
+      </div>
+
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-sm font-bold text-gray-700">保存先フォルダー</span>
+          <button onclick="chooseSaveFolder()" class="text-xs bg-white border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-50 transition shadow-sm font-medium flex items-center">
+            <i data-lucide="folder-open" class="w-3 h-3 mr-1"></i>フォルダーを選ぶ
+          </button>
+        </div>
+        <p id="saveFolderName" class="text-sm text-gray-600 bg-gray-50 rounded-lg p-2.5 border border-gray-200">未設定（通常のダウンロードフォルダーに保存されます）</p>
+      </div>
+
+      <div>
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+          <span class="text-sm font-bold text-gray-700">議事録フォーマット</span>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="el('formatFileInput').click()" class="text-xs bg-white border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-50 transition shadow-sm font-medium flex items-center">
+              <i data-lucide="file-up" class="w-3 h-3 mr-1"></i>ファイルから読み込む
+            </button>
+            <button onclick="openFormatEditor()" class="text-xs bg-white border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-50 transition shadow-sm font-medium flex items-center">
+              <i data-lucide="clipboard-paste" class="w-3 h-3 mr-1"></i>貼り付けて登録
+            </button>
+            <button id="deleteFormatBtn" onclick="deleteSelectedFormat()" class="text-xs bg-white border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-red-50 hover:text-red-600 transition shadow-sm font-medium flex items-center disabled:opacity-40 disabled:pointer-events-none">
+              <i data-lucide="trash-2" class="w-3 h-3 mr-1"></i>削除
+            </button>
+          </div>
+        </div>
+        <input type="file" id="formatFileInput" accept=".txt,.md,text/plain,text/markdown" class="hidden" onchange="importFormatFile(event)">
+        <select id="formatSelect" onchange="onFormatSelected()" class="w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0 bg-white cursor-pointer shadow-sm"></select>
+        <pre id="formatPreview" class="mt-2 max-h-48 overflow-auto text-xs whitespace-pre-wrap bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-700 font-sans"></pre>
+
+        <div id="formatEditor" class="hidden mt-3 p-4 bg-emerald-50 border border-emerald-100 rounded-xl space-y-2">
+          <input id="formatNameInput" type="text" placeholder="フォーマット名（例：定例会議用）" class="w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0">
+          <textarea id="formatBodyInput" rows="10" placeholder="ここに議事録のひな形を貼り付けてください" class="w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0"></textarea>
+          <div class="flex justify-end gap-2">
+            <button onclick="closeFormatEditor()" class="text-sm bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50">キャンセル</button>
+            <button onclick="registerFormat()" class="text-sm bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 font-bold">登録する</button>
+          </div>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">※読み込めるのはテキスト形式（.txt / .md）です。Googleドキュメントのひな形は「ファイル → ダウンロード → 書式なしテキスト（.txt）」で保存してから読み込んでください。フォーマットはこのPCのブラウザ内にだけ保存され、外部には送られません。</p>
+      </div>
+    </div>
+
     <!-- 詳細設定（デフォルトで開いておく） -->
     <details class="bg-white rounded-2xl shadow-sm border border-gray-100 group overflow-hidden" id="qualityDetails" open>
       <summary class="p-4 cursor-pointer font-medium text-gray-700 hover:text-gray-900 flex items-center justify-center space-x-2 transition-colors hover:bg-gray-50 list-none outline-none">
@@ -392,6 +448,10 @@
               <i data-lucide="file-audio" class="w-4 h-4 text-green-600"></i>
               <span>音声のみ (.mp3)</span>
             </button>
+            <button onclick="prepareMinutes(${file.id})" class="w-full sm:w-auto py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg flex items-center justify-center space-x-1.5 transition-colors shadow-sm" title="音声と依頼文を保存先フォルダーに保存">
+              <i data-lucide="file-text" class="w-4 h-4"></i>
+              <span>議事録の準備</span>
+            </button>
           </div>
         `;
         container.appendChild(div);
@@ -535,6 +595,7 @@
     async function startRecording() {
       hideError();
       chunks = [];
+      currentBytes = 0;
       currentChunkTime = 0;
       currentSplitIndex = 1;
       updateUI();
@@ -659,9 +720,10 @@
           const url = URL.createObjectURL(fixedBlob);
           const sizeMB = (fixedBlob.size / 1024 / 1024).toFixed(1);
           const durStr = formatTime(Math.floor(duration / 1000));
-          const name = `録画_${new Date().toISOString().slice(0,10)}_part${partNum}.webm`;
-          
-          recordedFiles.push({ id: Date.now(), url, name, sizeMB, durStr, blob: fixedBlob });
+          const dateStr = localDateStr();
+          const name = `録画_${dateStr}_part${partNum}.webm`;
+
+          recordedFiles.push({ id: Date.now(), url, name, sizeMB, durStr, blob: fixedBlob, dateStr, partNum });
           updateFileListUI();
         });
 
@@ -709,6 +771,332 @@
       updateUI();
       showToast("すべての録画を終了しました。右のリストからファイルを保存できます。");
     }
+
+    // ===================== 議事録の準備 =====================
+
+    // 日本時間など、PCの時計での日付（YYYY-MM-DD）
+    function localDateStr(d = new Date()) {
+      const p = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+    }
+
+    // ファイル名に使えない文字を置き換える
+    function safeFileName(s) {
+      return s.replace(/[\\/:*?"<>|\r\n\t]/g, '_').trim().slice(0, 80) || '会議';
+    }
+
+    // ---------- 保存先フォルダー（選んだフォルダーをブラウザ内に記憶する） ----------
+    let saveDirHandle = null;
+    const IDB_NAME = 'browserRecorder';
+    const IDB_STORE = 'handles';
+
+    function idbOpen() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(IDB_NAME, 1);
+        req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+    async function idbGet(key) {
+      const db = await idbOpen();
+      return new Promise((resolve, reject) => {
+        const req = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).get(key);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+    async function idbSet(key, value) {
+      const db = await idbOpen();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).put(value, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    function renderFolderName() {
+      el('saveFolderName').textContent = saveDirHandle
+        ? `📁 ${saveDirHandle.name}`
+        : '未設定（通常のダウンロードフォルダーに保存されます）';
+    }
+
+    async function chooseSaveFolder() {
+      if (!window.showDirectoryPicker) {
+        showError('このブラウザはフォルダーの選択に対応していません。Google Chrome をお使いください（このままでも通常のダウンロードで保存できます）。');
+        return;
+      }
+      try {
+        saveDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+        try { await idbSet('saveDir', saveDirHandle); } catch (e) { console.warn('フォルダーを記憶できませんでした', e); }
+        renderFolderName();
+        showToast(`保存先を「${saveDirHandle.name}」に設定しました。`, 4000);
+      } catch (err) {
+        if (err.name !== 'AbortError') showError(`フォルダーを選べませんでした：${err.message}`);
+      }
+    }
+
+    async function restoreSaveFolder() {
+      try {
+        const h = await idbGet('saveDir');
+        if (h) { saveDirHandle = h; renderFolderName(); }
+      } catch (e) { /* 記憶が使えない環境では未設定のまま */ }
+    }
+
+    // 書き込み許可の確認（ボタンを押した直後に呼ぶ必要がある）
+    async function ensureFolderPermission() {
+      if (!saveDirHandle) return false;
+      const opts = { mode: 'readwrite' };
+      try {
+        if ((await saveDirHandle.queryPermission(opts)) === 'granted') return true;
+        return (await saveDirHandle.requestPermission(opts)) === 'granted';
+      } catch (e) { return false; }
+    }
+
+    // 同じ名前のファイルがあれば上書きせず「(2)」などを付ける
+    async function uniqueNameInFolder(dir, filename) {
+      const dot = filename.lastIndexOf('.');
+      const stem = dot > 0 ? filename.slice(0, dot) : filename;
+      const ext = dot > 0 ? filename.slice(dot) : '';
+      let candidate = filename;
+      for (let i = 2; i < 100; i++) {
+        try { await dir.getFileHandle(candidate); } catch (e) { return candidate; }
+        candidate = `${stem}(${i})${ext}`;
+      }
+      return `${stem}_${Date.now()}${ext}`;
+    }
+
+    // フォルダーに保存。フォルダー未設定や許可がない場合は通常のダウンロード
+    async function saveBlob(filename, blob, useFolder) {
+      if (useFolder && saveDirHandle) {
+        const name = await uniqueNameInFolder(saveDirHandle, filename);
+        const fh = await saveDirHandle.getFileHandle(name, { create: true });
+        const w = await fh.createWritable();
+        await w.write(blob);
+        await w.close();
+        return name;
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      return filename;
+    }
+
+    // ---------- 議事録フォーマット（このPCのブラウザ内に保存） ----------
+    const FORMAT_KEY = 'minutesFormats';
+    const FORMAT_SEL_KEY = 'minutesFormatSelected';
+    const DEFAULT_FORMAT = {
+      id: 'default',
+      name: '標準（初期設定）',
+      body: [
+        '# 議事録',
+        '',
+        '- 会議名：',
+        '- 日時：',
+        '- 参加者：',
+        '',
+        '## 1. 目的・議題',
+        '',
+        '## 2. 決定事項',
+        '',
+        '## 3. 議論の要点',
+        '',
+        '## 4. ToDo（担当・内容・期限）',
+        '',
+        '## 5. 保留事項・次回までの確認事項',
+        ''
+      ].join('\n')
+    };
+    let formats = [];
+
+    function loadFormats() {
+      try { formats = JSON.parse(localStorage.getItem(FORMAT_KEY) || '[]'); } catch (e) { formats = []; }
+      if (!Array.isArray(formats)) formats = [];
+    }
+    function persistFormats() {
+      try { localStorage.setItem(FORMAT_KEY, JSON.stringify(formats)); return true; }
+      catch (e) { showError('フォーマットを保存できませんでした（ブラウザの保存領域が使えない設定になっています）。'); return false; }
+    }
+    function allFormats() { return [DEFAULT_FORMAT, ...formats]; }
+    function getSelectedFormatId() {
+      try { return localStorage.getItem(FORMAT_SEL_KEY) || 'default'; } catch (e) { return el('formatSelect').value || 'default'; }
+    }
+    function setSelectedFormatId(id) {
+      try { localStorage.setItem(FORMAT_SEL_KEY, id); } catch (e) { /* 記憶できなくても動作は続ける */ }
+    }
+    function getSelectedFormat() {
+      const id = el('formatSelect').value;
+      return allFormats().find(f => f.id === id) || DEFAULT_FORMAT;
+    }
+
+    function renderFormatSelect(selectId) {
+      const sel = el('formatSelect');
+      const want = selectId || getSelectedFormatId();
+      sel.innerHTML = '';
+      allFormats().forEach(f => {
+        const o = document.createElement('option');
+        o.value = f.id;
+        o.textContent = f.name;
+        sel.appendChild(o);
+      });
+      sel.value = allFormats().some(f => f.id === want) ? want : 'default';
+      onFormatSelected();
+    }
+    function onFormatSelected() {
+      const f = getSelectedFormat();
+      setSelectedFormatId(f.id);
+      el('formatPreview').textContent = f.body;
+      el('deleteFormatBtn').disabled = (f.id === 'default');
+    }
+
+    function openFormatEditor(name = '', body = '') {
+      el('formatNameInput').value = name;
+      el('formatBodyInput').value = body;
+      el('formatEditor').classList.remove('hidden');
+      el('formatNameInput').focus();
+    }
+    function closeFormatEditor() {
+      el('formatEditor').classList.add('hidden');
+      el('formatFileInput').value = '';
+    }
+
+    async function importFormatFile(event) {
+      const f = event.target.files && event.target.files[0];
+      if (!f) return;
+      if (f.size > 200 * 1024) {
+        showError('ファイルが大きすぎます（200KBまで）。ひな形の部分だけを保存して読み込んでください。');
+        event.target.value = '';
+        return;
+      }
+      try {
+        const text = await f.text();
+        openFormatEditor(f.name.replace(/\.[^.]+$/, ''), text);
+        showToast('ファイルを読み込みました。内容と名前を確認して「登録する」を押してください。', 5000);
+      } catch (e) {
+        showError(`ファイルを読み込めませんでした：${e.message}`);
+      }
+    }
+
+    function registerFormat() {
+      const name = el('formatNameInput').value.trim();
+      const body = el('formatBodyInput').value;
+      if (!name) { showError('フォーマット名を入力してください。'); return; }
+      if (!body.trim()) { showError('フォーマットの中身が空です。'); return; }
+      hideError();
+      const existing = formats.find(f => f.name === name);
+      if (existing) {
+        if (!confirm(`「${name}」はすでに登録されています。内容を置き換えますか？`)) return;
+        existing.body = body;
+        if (!persistFormats()) return;
+        renderFormatSelect(existing.id);
+      } else {
+        const nf = { id: 'f' + Date.now(), name, body };
+        formats.push(nf);
+        if (!persistFormats()) { formats.pop(); return; }
+        renderFormatSelect(nf.id);
+      }
+      closeFormatEditor();
+      showToast(`フォーマット「${name}」を登録しました。`, 4000);
+    }
+
+    function deleteSelectedFormat() {
+      const f = getSelectedFormat();
+      if (f.id === 'default') return;
+      if (!confirm(`フォーマット「${f.name}」を削除しますか？（元に戻せません）`)) return;
+      formats = formats.filter(x => x.id !== f.id);
+      persistFormats();
+      renderFormatSelect('default');
+      showToast(`フォーマット「${f.name}」を削除しました。`, 4000);
+    }
+
+    // ---------- 依頼文の作成と保存 ----------
+    function buildMinutesPrompt({ title, dateStr, durStr, partNum, mp3Name, format }) {
+      return [
+        '【議事録作成の依頼】',
+        `会議名：${title}`,
+        `録画日：${dateStr}`,
+        `録音時間：${durStr}（Part ${partNum}）`,
+        `音声ファイル：${mp3Name}`,
+        '',
+        '上の音声ファイルの内容から、議事録を作成してください。',
+        '',
+        '作成のルール：',
+        '- 下の「議事録フォーマット」の見出しと順番に沿って書く',
+        '- 音声に出てこない数字・名前・決定事項は書かない',
+        '- 聞き取れない箇所や判断できない箇所は【要確認】と書く',
+        '- 発言者が分かる場合は名前を、分からない場合は「参加者A」のように書く',
+        '- ToDo は「担当・内容・期限」をそろえて書く（期限が出てこない場合は【要確認】）',
+        '- 仕上がりは Google ドキュメントにする',
+        '',
+        `=== 議事録フォーマット（${format.name}） ===`,
+        format.body,
+        '=== ここまで ===',
+        ''
+      ].join('\n');
+    }
+
+    async function prepareMinutes(id) {
+      const file = recordedFiles.find(f => f.id === id);
+      if (!file) return;
+      if (typeof lamejs === 'undefined') {
+        showError("MP3変換ライブラリが読み込まれていません。インターネット接続を確認してください。");
+        return;
+      }
+      hideError();
+
+      // ボタンを押した直後にフォルダーの書き込み許可を確認する
+      let useFolder = false;
+      if (saveDirHandle) {
+        useFolder = await ensureFolderPermission();
+        if (!useFolder) showToast('保存先フォルダーへの書き込みが許可されなかったため、通常のダウンロードで保存します。', 5000);
+      }
+
+      const title = el('meetingTitle').value.trim() || '会議';
+      const format = getSelectedFormat();
+      const base = safeFileName(`${file.dateStr || localDateStr()}_${title}_part${file.partNum || 1}`);
+
+      showToast('議事録の準備中：音声を変換しています... 0%', 600000);
+      let mp3Blob;
+      try {
+        mp3Blob = await new Promise((resolve, reject) => extractAudioAsMp3Async(
+          file.blob,
+          (p) => { el('toastText').textContent = `議事録の準備中：音声を変換しています... ${p}%`; },
+          resolve,
+          reject
+        ));
+      } catch (e) {
+        hideToast();
+        showError('音声の変換に失敗しました。録画に音声が含まれていない可能性があります。');
+        return;
+      }
+
+      try {
+        const mp3Name = await saveBlob(`${base}.mp3`, mp3Blob, useFolder);
+        const promptText = buildMinutesPrompt({
+          title, dateStr: file.dateStr || localDateStr(), durStr: file.durStr,
+          partNum: file.partNum || 1, mp3Name, format
+        });
+        // Windows のメモ帳でも文字化けしないよう、先頭にBOMを付ける
+        const txtBlob = new Blob(['﻿' + promptText], { type: 'text/plain;charset=utf-8' });
+        const txtName = await saveBlob(`${base}_議事録依頼.txt`, txtBlob, useFolder);
+        const where = useFolder ? `「${saveDirHandle.name}」フォルダー` : 'ダウンロードフォルダー';
+        showToast(`議事録の準備ができました（${where}）。\n・${mp3Name}\n・${txtName}\nこの2つを NotebookLM か Claude に渡してください。`, 10000);
+      } catch (e) {
+        hideToast();
+        showError(`保存に失敗しました：${e.message}`);
+      }
+    }
+
+    // 起動時の読み込み
+    loadFormats();
+    renderFormatSelect();
+    restoreSaveFolder();
 
   </script>
 </body>
