@@ -56,6 +56,15 @@
             まだ保存されたデータはありません。<br>録画を終了するか分割すると、ここにファイルが追加されます。
           </div>
         </div>
+
+        <!-- 議事録の準備（分割された Part をまとめて1回で） -->
+        <div id="minutesAction" class="hidden w-full max-w-3xl mt-4">
+          <button onclick="prepareMinutes()" class="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl flex items-center justify-center space-x-2 transition-colors shadow-sm" title="音声と依頼文を保存先フォルダーに保存">
+            <i data-lucide="file-text" class="w-5 h-5"></i>
+            <span id="minutesActionLabel">議事録の準備</span>
+          </button>
+          <p class="text-xs text-gray-500 mt-1.5 text-center">最後に録画した会議の Part をすべてまとめて、音声（MP3）1つと依頼文1つを作ります。</p>
+        </div>
       </div>
     </div>
 
@@ -134,7 +143,7 @@
           <i data-lucide="file-text" class="w-5 h-5 text-emerald-600"></i>
           <span>議事録の準備</span>
         </div>
-        <p class="text-xs text-gray-500 mt-1">録画リストの「議事録の準備」を押すと、音声（MP3）と依頼文（選んだフォーマット入り）を保存先フォルダーに保存します。</p>
+        <p class="text-xs text-gray-500 mt-1">録画リストの下の「議事録の準備」を押すと、音声（MP3）と依頼文（選んだフォーマット入り）を保存先フォルダーに保存します。分割された録画も1回でまとめて作ります。</p>
       </div>
 
       <div>
@@ -224,15 +233,13 @@
           <div class="mt-6 border-t border-gray-100 pt-6">
             <label class="block font-bold text-gray-900 mb-2 flex items-center space-x-2">
               <i data-lucide="clock" class="w-5 h-5 text-gray-500"></i>
-              <span>自動分割設定（※実際のサイズが190MBに達したら設定に関わらず自動分割されます）</span>
+              <span>自動分割設定</span>
             </label>
             <select id="autoSplitInterval" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 transition-colors bg-white cursor-pointer shadow-sm">
-              <option value="0">時間では分割しない（手動停止 または 190MB到達時のみ保存）</option>
-              <option value="5">5分ごとに自動分割</option>
-              <option value="10">10分ごとに自動分割</option>
-              <option value="20">20分ごとに自動分割</option>
-              <option value="60" selected>60分ごとに自動分割 (超低画質なら1時間で約160MB・音声込み)</option>
+              <option value="60" selected>60分ごとに自動分割する</option>
+              <option value="0">今回は自動分割しない</option>
             </select>
+            <p class="text-xs text-gray-500 mt-2">※どちらを選んでも、ファイルが190MBに達したときは200MBを超えないよう自動で分割します。</p>
           </div>
 
         </div>
@@ -256,6 +263,8 @@
     // 実際のファイルサイズ（バイト）がこれを超えたら自動分割する（200MB制限に対する安全マージン）
     const SIZE_LIMIT_BYTES = 190 * 1000 * 1000;
     let currentBytes = 0;
+    // 「録画を開始する」から「完全に終了する」までを1つの会議として扱うための番号
+    let recordingSessionId = 0;
 
     let isRecording = false;
     let quality = 'veryLow'; 
@@ -412,17 +421,25 @@
 
       if (recordedFiles.length === 0) {
         emptyMsg.classList.remove('hidden');
+        el('minutesAction').classList.add('hidden');
         return;
       }
-      
+
       emptyMsg.classList.add('hidden');
-      
+
+      // 議事録ボタン：最後に録画した会議の Part 数を表示
+      const parts = latestSessionFiles();
+      el('minutesActionLabel').textContent = parts.length > 1
+        ? `議事録の準備（Part 1〜${parts.length} をまとめて）`
+        : '議事録の準備';
+      el('minutesAction').classList.remove('hidden');
+
       [...recordedFiles].reverse().forEach(file => {
         const div = document.createElement('div');
-        div.className = "file-item flex flex-col md:flex-row items-start md:items-center justify-between p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 transition-colors shadow-sm gap-4";
-        
+        div.className = "file-item flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 transition-colors shadow-sm gap-4";
+
         div.innerHTML = `
-          <div class="flex items-center space-x-4 w-full md:w-1/3">
+          <div class="flex items-center space-x-4 w-full lg:flex-1 min-w-0">
             <button onclick="playVideo('${file.url}')" class="p-3 bg-blue-50 rounded-lg shadow-sm text-blue-600 hover:bg-blue-600 hover:text-white transition-all flex-shrink-0" title="プレビュー再生">
               <i data-lucide="play" class="w-6 h-6"></i>
             </button>
@@ -435,7 +452,7 @@
             </div>
           </div>
           
-          <div class="flex flex-col sm:flex-row flex-wrap gap-2 w-full md:w-auto flex-shrink-0 justify-end md:ml-auto">
+          <div class="flex flex-col sm:flex-row flex-wrap gap-2 w-full lg:w-auto justify-end">
             <button onclick="downloadFile(${file.id}, 'webm')" class="flex-1 sm:flex-none py-2.5 px-3 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-semibold rounded-lg flex items-center justify-center space-x-1.5 transition-colors border border-gray-300" title="ブラウザやPC再生用">
               <i data-lucide="monitor-play" class="w-4 h-4 text-blue-600"></i>
               <span>動画 (.webm)</span>
@@ -447,10 +464,6 @@
             <button onclick="downloadMp3(${file.id})" class="w-full sm:w-auto py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-semibold rounded-lg flex items-center justify-center space-x-1.5 transition-colors border border-gray-300" title="Notebookで動画が重い場合">
               <i data-lucide="file-audio" class="w-4 h-4 text-green-600"></i>
               <span>音声のみ (.mp3)</span>
-            </button>
-            <button onclick="prepareMinutes(${file.id})" class="w-full sm:w-auto py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg flex items-center justify-center space-x-1.5 transition-colors shadow-sm" title="音声と依頼文を保存先フォルダーに保存">
-              <i data-lucide="file-text" class="w-4 h-4"></i>
-              <span>議事録の準備</span>
             </button>
           </div>
         `;
@@ -598,6 +611,7 @@
       currentBytes = 0;
       currentChunkTime = 0;
       currentSplitIndex = 1;
+      recordingSessionId = Date.now(); // この録画（会議）のまとまりを表す番号
       updateUI();
 
       try {
@@ -714,8 +728,9 @@
         
         const rawBlob = new Blob(chunks, { type: selectedMimeType || 'video/webm' });
         const duration = Date.now() - recordingStartTime;
-        const partNum = currentSplitIndex; 
-        
+        const partNum = currentSplitIndex;
+        const sessionId = recordingSessionId;
+
         ysFixWebmDuration(rawBlob, duration, function(fixedBlob) {
           const url = URL.createObjectURL(fixedBlob);
           const sizeMB = (fixedBlob.size / 1024 / 1024).toFixed(1);
@@ -723,7 +738,7 @@
           const dateStr = localDateStr();
           const name = `録画_${dateStr}_part${partNum}.webm`;
 
-          recordedFiles.push({ id: Date.now(), url, name, sizeMB, durStr, blob: fixedBlob, dateStr, partNum });
+          recordedFiles.push({ id: Date.now(), url, name, sizeMB, durStr, blob: fixedBlob, dateStr, partNum, sessionId, durSec: Math.floor(duration / 1000) });
           updateFileListUI();
         });
 
@@ -1016,12 +1031,13 @@
     }
 
     // ---------- 依頼文の作成と保存 ----------
-    function buildMinutesPrompt({ title, dateStr, durStr, partNum, mp3Name, format }) {
+    function buildMinutesPrompt({ title, dateStr, durStr, partCount, mp3Name, format }) {
+      const partNote = partCount > 1 ? `（分割された Part 1〜${partCount} を1つにまとめた音声）` : '';
       return [
         '【議事録作成の依頼】',
         `会議名：${title}`,
         `録画日：${dateStr}`,
-        `録音時間：${durStr}（Part ${partNum}）`,
+        `録音時間：${durStr}${partNote}`,
         `音声ファイル：${mp3Name}`,
         '',
         '上の音声ファイルの内容から、議事録を作成してください。',
@@ -1041,9 +1057,22 @@
       ].join('\n');
     }
 
-    async function prepareMinutes(id) {
-      const file = recordedFiles.find(f => f.id === id);
-      if (!file) return;
+    // 最後に録画した会議の Part（分割されたファイル）を、Part 順に返す
+    function latestSessionFiles() {
+      if (recordedFiles.length === 0) return [];
+      const lastSession = recordedFiles[recordedFiles.length - 1].sessionId;
+      return recordedFiles
+        .filter(f => f.sessionId === lastSession)
+        .sort((a, b) => (a.partNum || 1) - (b.partNum || 1));
+    }
+
+    async function prepareMinutes() {
+      const files = latestSessionFiles();
+      if (files.length === 0) return;
+      if (isRecording) {
+        showError('録画中です。「録画を完全に終了する」を押してから、議事録の準備をしてください。');
+        return;
+      }
       if (typeof lamejs === 'undefined') {
         showError("MP3変換ライブラリが読み込まれていません。インターネット接続を確認してください。");
         return;
@@ -1059,28 +1088,41 @@
 
       const title = el('meetingTitle').value.trim() || '会議';
       const format = getSelectedFormat();
-      const base = safeFileName(`${file.dateStr || localDateStr()}_${title}_part${file.partNum || 1}`);
+      const dateStr = files[0].dateStr || localDateStr();
+      const base = safeFileName(`${dateStr}_${title}`);
+      const n = files.length;
 
+      // Part を1つずつ MP3 に変換し、順番につなげて1つの音声にする
       showToast('議事録の準備中：音声を変換しています... 0%', 600000);
-      let mp3Blob;
-      try {
-        mp3Blob = await new Promise((resolve, reject) => extractAudioAsMp3Async(
-          file.blob,
-          (p) => { el('toastText').textContent = `議事録の準備中：音声を変換しています... ${p}%`; },
-          resolve,
-          reject
-        ));
-      } catch (e) {
-        hideToast();
-        showError('音声の変換に失敗しました。録画に音声が含まれていない可能性があります。');
-        return;
+      const mp3Parts = [];
+      for (let i = 0; i < n; i++) {
+        const label = n > 1 ? `（Part ${i + 1}/${n}）` : '';
+        try {
+          const b = await new Promise((resolve, reject) => extractAudioAsMp3Async(
+            files[i].blob,
+            (p) => { el('toastText').textContent = `議事録の準備中：音声を変換しています${label}... ${p}%`; },
+            resolve,
+            reject
+          ));
+          mp3Parts.push(b);
+        } catch (e) {
+          hideToast();
+          showError(`Part ${i + 1} の音声の変換に失敗しました。録画に音声が含まれていない可能性があります。`);
+          return;
+        }
       }
+      const mp3Blob = new Blob(mp3Parts, { type: 'audio/mp3' });
+      const totalSec = files.reduce((s, f) => s + (f.durSec || 0), 0);
+      const hms = (t) => {
+        const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
+        return (h > 0 ? `${h}時間` : '') + `${String(m).padStart(h > 0 ? 2 : 1, '0')}分${String(s).padStart(2, '0')}秒`;
+      };
+      const durStr = totalSec > 0 ? hms(totalSec) : files.map(f => f.durStr).join(' + ');
 
       try {
         const mp3Name = await saveBlob(`${base}.mp3`, mp3Blob, useFolder);
         const promptText = buildMinutesPrompt({
-          title, dateStr: file.dateStr || localDateStr(), durStr: file.durStr,
-          partNum: file.partNum || 1, mp3Name, format
+          title, dateStr, durStr, partCount: n, mp3Name, format
         });
         // Windows のメモ帳でも文字化けしないよう、先頭にBOMを付ける
         const txtBlob = new Blob(['﻿' + promptText], { type: 'text/plain;charset=utf-8' });
