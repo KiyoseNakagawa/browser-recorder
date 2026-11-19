@@ -5,11 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>かんたんブラウザ録画 (Notebook対応・多形式保存版)</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // 落ち着いたパステル基調の配色（既存の色名をパステル寄りの色に置き換える）
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['"Zen Kaku Gothic New"', '"Hiragino Sans"', '"Yu Gothic"', 'sans-serif'] },
+          colors: {
+            gray:    { 50:'#faf8f5', 100:'#f3efe9', 200:'#e7e1d8', 300:'#d6cec2', 400:'#aea493', 500:'#857b6c', 600:'#665d51', 700:'#4f483f', 800:'#3b352e', 900:'#2c2823' },
+            blue:    { 50:'#f1f3fb', 100:'#e1e6f6', 200:'#c9d2ee', 300:'#a9b6e0', 400:'#8797cf', 500:'#6c7dbd', 600:'#5a6aa8', 700:'#4b588c', 800:'#3e4972', 900:'#333c5c' },
+            emerald: { 50:'#eff6f2', 100:'#dceee3', 200:'#bfdecb', 300:'#9ccaae', 400:'#78b08f', 500:'#5e9677', 600:'#4f8266', 700:'#426b55', 800:'#365646', 900:'#2c463a' },
+            red:     { 50:'#fbf1f1', 100:'#f6e0e0', 200:'#eec6c6', 300:'#e0a3a4', 400:'#cf8284', 500:'#bd6a6d', 600:'#a6595c', 700:'#8a4a4c', 800:'#703d3f', 900:'#5a3334' },
+            yellow:  { 50:'#fdf7ec', 100:'#faecd2', 200:'#f4dcae', 300:'#ebc785', 400:'#ddae62', 500:'#cc9a4f', 600:'#b38543', 700:'#916b37', 800:'#74562d', 900:'#5d4525' },
+            purple:  { 50:'#f6f2fa', 100:'#ece3f4', 200:'#dccbea', 300:'#c6abdb', 400:'#ad8bc8', 500:'#9573b3', 600:'#7f619c', 700:'#68507f', 800:'#544167', 900:'#443553' },
+            green:   { 400:'#9fd3b0', 500:'#78b08f', 600:'#5e9677' }
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body { background: linear-gradient(160deg, #f7f3ee 0%, #eef1f8 55%, #f1f6f2 100%); background-attachment: fixed; }
+    .shadow-sm { box-shadow: 0 1px 3px rgba(80, 70, 60, 0.06), 0 1px 2px rgba(80, 70, 60, 0.04); }
+  </style>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/fix-webm-duration@1.0.6/fix-webm-duration.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
 </head>
-<body class="min-h-screen bg-gray-50 text-gray-800 font-sans relative pb-12">
+<body class="min-h-screen text-gray-800 font-sans relative pb-12">
 
   <div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-4 rounded-xl shadow-2xl z-50 flex items-center space-x-3 transition-all duration-300 opacity-0 pointer-events-none">
     <i data-lucide="check-circle" class="w-6 h-6 text-green-400 flex-shrink-0"></i>
@@ -18,8 +43,8 @@
 
   <div class="max-w-4xl mx-auto p-6 space-y-6">
     
-    <header class="bg-white rounded-2xl shadow-sm p-6 flex items-center space-x-4 border border-gray-100">
-      <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+    <header class="rounded-2xl shadow-sm p-6 flex items-center space-x-4 border border-white/70" style="background: linear-gradient(120deg, #e9edf9 0%, #f3ecf6 50%, #eaf4ee 100%);">
+      <div class="p-3 bg-white/80 text-blue-600 rounded-xl shadow-sm">
         <i data-lucide="monitor" class="w-8 h-8"></i>
       </div>
       <div>
@@ -41,9 +66,9 @@
 
       <div class="p-6 flex flex-col items-center">
         <div id="viewVideo" class="w-full max-w-3xl flex flex-col">
-          <div class="aspect-video w-full bg-gray-900 rounded-xl overflow-hidden flex items-center justify-center relative shadow-inner">
+          <div class="aspect-video w-full bg-blue-100 rounded-xl overflow-hidden flex items-center justify-center relative shadow-inner">
             <video id="videoPlayer" controls class="hidden w-full h-full object-contain"></video>
-            <div id="videoPlaceholder" class="text-gray-500 flex flex-col items-center">
+            <div id="videoPlaceholder" class="text-blue-500 flex flex-col items-center">
               <i data-lucide="monitor-play" class="w-12 h-12 mb-2 opacity-50"></i>
               <p>下のリストから「再生」ボタンを押すとプレビューが表示されます</p>
             </div>
@@ -148,7 +173,33 @@
 
       <div>
         <label for="meetingTitle" class="block text-sm font-bold text-gray-700 mb-1">会議名（ファイル名と依頼文に入ります）</label>
-        <input id="meetingTitle" type="text" placeholder="例：メディカル本部 定例" class="w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0">
+        <input id="meetingTitle" type="text" placeholder="例：メディカル本部 定例" class="meeting-field w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0">
+      </div>
+
+      <div>
+        <span class="block text-sm font-bold text-gray-700 mb-1">日時・場所</span>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <input id="meetingDate" type="date" aria-label="会議の日付" class="meeting-field col-span-2 sm:col-span-1 p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0 bg-white">
+          <input id="meetingStart" type="time" aria-label="開始時刻" class="meeting-field p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0 bg-white">
+          <input id="meetingEnd" type="time" aria-label="終了時刻" class="meeting-field p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0 bg-white">
+          <input id="meetingPlace" type="text" placeholder="場所（例：オンライン）" class="meeting-field col-span-2 sm:col-span-1 p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0">
+        </div>
+        <p class="text-xs text-gray-500 mt-1">日付が空欄のときは録画した日を使います。時刻は「開始」「終了」の順です。</p>
+      </div>
+
+      <div>
+        <label for="meetingParticipants" class="block text-sm font-bold text-gray-700 mb-1">参加者（会社ごとに1行）</label>
+        <textarea id="meetingParticipants" rows="3" placeholder="例：&#10;日本光電工業株式会社：岩永様、久保様、村山様&#10;株式会社CureApp：宮田、齊藤、中川" class="meeting-field w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0"></textarea>
+        <p class="text-xs text-gray-500 mt-1">ここに書いた表記のまま議事録に入ります。発言者の名前もこの表記に合わせます。</p>
+      </div>
+
+      <div>
+        <label for="meetingMaterials" class="block text-sm font-bold text-gray-700 mb-1">使用資料のリンク（1行に1つ）</label>
+        <textarea id="meetingMaterials" rows="3" placeholder="例：&#10;提案資料_v1.0 https://docs.google.com/presentation/d/...&#10;前回議事録 https://docs.google.com/document/d/..." class="meeting-field w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0"></textarea>
+        <div class="flex items-center justify-between mt-1 gap-2">
+          <p class="text-xs text-gray-500">「資料名 URL」の形で書いてください。URLだけでも大丈夫です。</p>
+          <button onclick="clearMeetingInfo()" class="text-xs bg-white border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition shadow-sm font-medium flex-shrink-0">入力をクリア</button>
+        </div>
       </div>
 
       <div>
@@ -911,13 +962,22 @@
       name: '標準（初期設定）',
       body: [
         '# 指示',
-        '以下の「会議メモ / 文字起こしテキスト」をもとに、指定されたマークダウン形式で議事録を作成してください。',
+        '以下の「会議メモ / 文字起こしテキスト」と「会議情報」をもとに、指定された形式で議事録を作成してください。',
         '',
         '# 出力要件（フォーマット）',
         '- マークダウン形式をベースとしつつ、タイトルの中央揃えや末尾の右寄せには指定のHTMLタグを使用してください。',
         '- 各項目の見出しは `##` (中見出し) を使用してください。',
         '- 文字サイズ：タイトル 14pt 太字／見出し 12pt 太字／本文・表 11pt',
-        '- 比較検討された事項や、質疑応答（Q&A）があった場合は、必ずマークダウンの表（テーブル）形式で整理して出力してください。',
+        '- 見出しに記号（■ □ ● など）は付けないでください。ただし「Q&A」と「ToDo」の見出しだけは先頭に「■」を付けてください。',
+        '- 見やすさのため、見出しの項目と項目の間は必ず1行空けてください。',
+        '- 箇条書きの記号は次のとおり使い分けてください。',
+        '  - 「要約」の箇条書き：白丸（◦）',
+        '  - 「会議の議事内容（本文）」の箇条書き：バー記号（-）',
+        '  - 「会議情報」「使用資料・リンク」「ToDo」は箇条書きにせず、1行ずつ書く',
+        '- 参加者・日時・使用資料は、依頼文の「会議情報」に入力された内容をそのまま使ってください（表記を変えない）。',
+        '- 発言者の書き方：社外の方は「会社名（氏名様）」、自社の方は「会社名 氏名」。誰の発言か判断できない場合は会社名だけを書いてください。',
+        '- 比較検討された事項や、質疑応答（Q&A）があった場合は、必ずマークダウンの表（テーブル）形式で整理して出力してください。表の中で発言がなかった欄は「言及なし」と書いてください。',
+        '- ToDo の期限は、発言があった場合だけ書いてください。',
         '- 不要な前置きやまとめの言葉は省き、以下のテンプレートの構成通りに出力してください。',
         '',
         '# 出力テンプレート',
@@ -926,25 +986,36 @@
         '【ここに会議名を記載】議事録',
         '</div>',
         '',
-        '<br>',
+        '## 会議情報',
+        '日時：[202X年X月X日（曜日）00:00～00:00]　[場所（例：オンライン）]',
+        '参加者：',
+        '[会社名]：[氏名、氏名、…]',
+        '[会社名]：[氏名、氏名、…]',
         '',
-        '## ■ 会議情報',
-        '- 日時：[202X年X月X日（曜日）00:00 - 00:00]',
-        '- 参加者：[参加者名]',
-        '- 作成者：[作成者名]',
+        '## 本会議のまとめ（要約・結論）',
+        '**決定事項・結論：**',
+        '　[会議での最終決定事項や方向性を簡潔に記載]',
         '',
-        '## ■ 本会議のまとめ（要約・結論）',
-        '- **決定事項・結論：** [会議での最終決定事項や方向性を簡潔に記載]',
-        '- **要約：** [議論の主なポイントや背景を箇条書きで分かりやすく記載]',
+        '**要約：**',
+        '◦ [議論の主なポイントや背景を記載]',
+        '◦ [議論の主なポイントや背景を記載]',
         '',
-        '## ■ 使用資料・リンク',
-        '- [[資料の名称]](URL)',
+        '## 使用資料・リンク',
+        '[資料の名称](URL)',
         '',
-        '## ■ 会議の議事内容（本文）',
-        '（※議論の経緯などを記載。比較検討事項があれば以下の表形式を使用）',
+        '## 会議の議事内容（本文）',
+        '**1. [話題名]（[説明者]）**',
+        '- [議論の経緯や説明の内容]',
+        '- [議論の経緯や説明の内容]',
+        '',
+        '**2. [話題名]（[説明者]）**',
+        '- [議論の経緯や説明の内容]',
+        '',
+        '（※比較検討事項があれば、該当する話題の中で以下の表形式を使用）',
         '',
         '| 比較項目 | A案 | B案 | 結論・備考 |',
         '| :--- | :--- | :--- | :--- |',
+        '| 概要 | | | |',
         '| メリット | | | |',
         '| デメリット | | | |',
         '| コスト/期間 | | | |',
@@ -954,13 +1025,11 @@
         '',
         '| 質問 (Q) | 回答 (A) |',
         '| :--- | :--- |',
-        '| [質問内容] | [回答内容] |',
+        '| **[会社名]（[氏名]様）：**[質問内容] | **[会社名] [氏名]：**[回答内容] |',
         '',
         '## ■ ToDo（ネクストアクション）',
-        '- [ ] [担当者名]：[タスク内容] （期限：〇/〇）',
-        '- [ ] [担当者名]：[タスク内容] （期限：〇/〇）',
-        '',
-        '<br>',
+        '☐ [担当者名]：[タスク内容]（期限：〇/〇）',
+        '☐ [担当者名]：[タスク内容]',
         '',
         '<div style="text-align: right;">',
         '以上',
@@ -1074,9 +1143,62 @@
       showToast(`フォーマット「${f.name}」を削除しました。`, 4000);
     }
 
+    // ---------- 会議情報（日時・参加者・資料）：入力途中の内容をこのPCのブラウザ内に記憶 ----------
+    const MEETING_DRAFT_KEY = 'meetingInfoDraft';
+    const MEETING_FIELDS = ['meetingTitle', 'meetingDate', 'meetingStart', 'meetingEnd', 'meetingPlace', 'meetingParticipants', 'meetingMaterials'];
+
+    function saveMeetingDraft() {
+      const data = {};
+      MEETING_FIELDS.forEach(id => { data[id] = el(id).value; });
+      try { localStorage.setItem(MEETING_DRAFT_KEY, JSON.stringify(data)); } catch (e) { /* 記憶できなくても動作は続ける */ }
+    }
+    function restoreMeetingDraft() {
+      let data = null;
+      try { data = JSON.parse(localStorage.getItem(MEETING_DRAFT_KEY) || 'null'); } catch (e) { data = null; }
+      if (data) MEETING_FIELDS.forEach(id => { if (typeof data[id] === 'string') el(id).value = data[id]; });
+      document.querySelectorAll('.meeting-field').forEach(f => f.addEventListener('input', saveMeetingDraft));
+    }
+    function clearMeetingInfo() {
+      if (!confirm('会議名・日時・場所・参加者・資料のリンクの入力をすべて消しますか？')) return;
+      MEETING_FIELDS.forEach(id => { el(id).value = ''; });
+      saveMeetingDraft();
+    }
+
+    // 「2026-11-19」→「2026年11月19日（木）」
+    function jpDate(ymd) {
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd || '');
+      if (!m) return ymd || '';
+      const d = new Date(+m[1], +m[2] - 1, +m[3]);
+      return `${+m[1]}年${+m[2]}月${+m[3]}日（${'日月火水木金土'[d.getDay()]}）`;
+    }
+
+    // 入力欄から会議情報をまとめる（空欄は【要確認】）
+    function collectMeetingInfo(recordDateStr) {
+      const date = el('meetingDate').value || recordDateStr;
+      const start = el('meetingStart').value, end = el('meetingEnd').value;
+      const time = start || end ? `${start || '【要確認】'}～${end || '【要確認】'}` : '【要確認：開始・終了時刻】';
+      const place = el('meetingPlace').value.trim();
+      const participants = el('meetingParticipants').value.split('\n').map(s => s.trim()).filter(Boolean);
+      const materials = el('meetingMaterials').value.split('\n').map(s => s.trim()).filter(Boolean).map(line => {
+        const urlMatch = line.match(/https?:\/\/\S+/);
+        if (!urlMatch) return { name: line, url: '' };
+        const name = line.replace(urlMatch[0], '').trim().replace(/[：:\s]+$/, '');
+        return { name: name || urlMatch[0], url: urlMatch[0] };
+      });
+      return {
+        dateTime: `${jpDate(date)} ${time}${place ? '　' + place : ''}`,
+        participants,
+        materials
+      };
+    }
+
     // ---------- 依頼文の作成と保存 ----------
-    function buildMinutesPrompt({ title, dateStr, durStr, partCount, mp3Name, format }) {
+    function buildMinutesPrompt({ title, dateStr, durStr, partCount, mp3Name, format, info }) {
       const partNote = partCount > 1 ? `（分割された Part 1〜${partCount} を1つにまとめた音声）` : '';
+      const participantLines = info.participants.length ? info.participants : ['【要確認：参加者が入力されていません】'];
+      const materialLines = info.materials.length
+        ? info.materials.map(m => m.url ? `[${m.name}](${m.url})` : m.name)
+        : ['（入力なし）'];
       return [
         '【議事録作成の依頼】',
         `会議名：${title}`,
@@ -1084,11 +1206,20 @@
         `録音時間：${durStr}${partNote}`,
         `音声ファイル：${mp3Name}`,
         '',
+        '■ 会議情報（入力済みの正確な情報）',
+        `日時：${info.dateTime}`,
+        '参加者：',
+        ...participantLines,
+        '使用資料・リンク：',
+        ...materialLines,
+        '',
         '上の音声ファイルの内容から、議事録を作成してください。',
         '',
         '作成のルール：',
         '- 下の「議事録フォーマット」の見出しと順番に沿って書く',
-        '- 音声に出てこない数字・名前・決定事項は書かない',
+        '- 「会議情報」「使用資料・リンク」の欄は、上の入力済みの情報をそのまま使う（表記を変えない）',
+        '- 発言者の名前は、上の「参加者」の表記に合わせる。誰の発言か判断できない場合は会社名だけを書く',
+        '- 音声と上の会議情報に出てこない数字・名前・決定事項は書かない',
         '- 聞き取れない箇所や判断できない箇所は【要確認】と書く',
         '- 発言者が分かる場合は名前を、分からない場合は「参加者A」のように書く',
         '- ToDo は「担当・内容・期限」をそろえて書く（期限が出てこない場合は【要確認】）',
@@ -1166,7 +1297,8 @@
       try {
         const mp3Name = await saveBlob(`${base}.mp3`, mp3Blob, useFolder);
         const promptText = buildMinutesPrompt({
-          title, dateStr, durStr, partCount: n, mp3Name, format
+          title, dateStr, durStr, partCount: n, mp3Name, format,
+          info: collectMeetingInfo(dateStr)
         });
         // Windows のメモ帳でも文字化けしないよう、先頭にBOMを付ける
         const txtBlob = new Blob(['﻿' + promptText], { type: 'text/plain;charset=utf-8' });
@@ -1183,6 +1315,7 @@
     loadFormats();
     renderFormatSelect();
     restoreSaveFolder();
+    restoreMeetingDraft();
 
   </script>
 </body>
