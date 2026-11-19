@@ -84,7 +84,7 @@
 
         <!-- 議事録の準備（分割された Part をまとめて1回で） -->
         <div id="minutesAction" class="hidden w-full max-w-3xl mt-4">
-          <button onclick="prepareMinutes()" class="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl flex items-center justify-center space-x-2 transition-colors shadow-sm" title="音声と依頼文を保存先フォルダーに保存">
+          <button onclick="prepareMinutes()" class="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl flex items-center justify-center space-x-2 transition-colors shadow-sm" title="音声と依頼文を保存先フォルダに保存">
             <i data-lucide="file-text" class="w-5 h-5"></i>
             <span id="minutesActionLabel">議事録の準備</span>
           </button>
@@ -168,7 +168,7 @@
           <i data-lucide="file-text" class="w-5 h-5 text-emerald-600"></i>
           <span>議事録の準備</span>
         </div>
-        <p class="text-xs text-gray-500 mt-1">録画リストの下の「議事録の準備」を押すと、音声（MP3）と依頼文（選んだフォーマット入り）を保存先フォルダーに保存します。分割された録画も1回でまとめて作ります。</p>
+        <p class="text-xs text-gray-500 mt-1">録画リストの下の「議事録の準備」を押すと、音声（MP3）と依頼文（選んだフォーマット入り）を保存先フォルダに保存します。分割された録画も1回でまとめて作ります。</p>
       </div>
 
       <div>
@@ -189,13 +189,13 @@
 
       <div>
         <label for="meetingParticipants" class="block text-sm font-bold text-gray-700 mb-1">参加者（会社ごとに1行）</label>
-        <textarea id="meetingParticipants" rows="3" placeholder="例：&#10;日本光電工業株式会社：岩永様、久保様、村山様&#10;株式会社CureApp：宮田、齊藤、中川" class="meeting-field w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0"></textarea>
+        <textarea id="meetingParticipants" rows="3" placeholder="例：&#10;〇〇株式会社：〇〇様、〇〇様&#10;株式会社CureApp：〇〇、〇〇" class="meeting-field w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0"></textarea>
         <p class="text-xs text-gray-500 mt-1">ここに書いた表記のまま議事録に入ります。発言者の名前もこの表記に合わせます。</p>
       </div>
 
       <div>
         <label for="meetingMaterials" class="block text-sm font-bold text-gray-700 mb-1">使用資料のリンク（1行に1つ）</label>
-        <textarea id="meetingMaterials" rows="3" placeholder="例：&#10;提案資料_v1.0 https://docs.google.com/presentation/d/...&#10;前回議事録 https://docs.google.com/document/d/..." class="meeting-field w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0"></textarea>
+        <textarea id="meetingMaterials" rows="3" placeholder="例：&#10;〇〇資料 https://〜&#10;〇〇議事録 https://〜" class="meeting-field w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0"></textarea>
         <div class="flex items-center justify-between mt-1 gap-2">
           <p class="text-xs text-gray-500">「資料名 URL」の形で書いてください。URLだけでも大丈夫です。</p>
           <button onclick="clearMeetingInfo()" class="text-xs bg-white border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition shadow-sm font-medium flex-shrink-0">入力をクリア</button>
@@ -204,12 +204,13 @@
 
       <div>
         <div class="flex items-center justify-between mb-1">
-          <span class="text-sm font-bold text-gray-700">保存先フォルダー</span>
+          <span class="text-sm font-bold text-gray-700">保存先フォルダ</span>
           <button onclick="chooseSaveFolder()" class="text-xs bg-white border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-50 transition shadow-sm font-medium flex items-center">
-            <i data-lucide="folder-open" class="w-3 h-3 mr-1"></i>フォルダーを選ぶ
+            <i data-lucide="folder-open" class="w-3 h-3 mr-1"></i>フォルダを選ぶ
           </button>
         </div>
-        <p id="saveFolderName" class="text-sm text-gray-600 bg-gray-50 rounded-lg p-2.5 border border-gray-200">未設定（通常のダウンロードフォルダーに保存されます）</p>
+        <p id="saveFolderName" class="text-sm text-gray-600 bg-gray-50 rounded-lg p-2.5 border border-gray-200">未選択</p>
+        <p class="text-xs text-gray-500 mt-1">会議ごとに、音声と依頼文を保存するフォルダを選んでください。</p>
       </div>
 
       <div>
@@ -851,63 +852,28 @@
       return s.replace(/[\\/:*?"<>|\r\n\t]/g, '_').trim().slice(0, 80) || '会議';
     }
 
-    // ---------- 保存先フォルダー（選んだフォルダーをブラウザ内に記憶する） ----------
+    // ---------- 保存先フォルダ（毎回、会議ごとに選ぶ。記憶はしない） ----------
     let saveDirHandle = null;
-    const IDB_NAME = 'browserRecorder';
-    const IDB_STORE = 'handles';
-
-    function idbOpen() {
-      return new Promise((resolve, reject) => {
-        const req = indexedDB.open(IDB_NAME, 1);
-        req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      });
-    }
-    async function idbGet(key) {
-      const db = await idbOpen();
-      return new Promise((resolve, reject) => {
-        const req = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).get(key);
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      });
-    }
-    async function idbSet(key, value) {
-      const db = await idbOpen();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(IDB_STORE, 'readwrite');
-        tx.objectStore(IDB_STORE).put(value, key);
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-      });
-    }
 
     function renderFolderName() {
-      el('saveFolderName').textContent = saveDirHandle
-        ? `📁 ${saveDirHandle.name}`
-        : '未設定（通常のダウンロードフォルダーに保存されます）';
+      const box = el('saveFolderName');
+      box.textContent = saveDirHandle ? `📁 ${saveDirHandle.name}` : '未選択';
+      box.classList.toggle('text-gray-400', !saveDirHandle);
     }
 
     async function chooseSaveFolder() {
       if (!window.showDirectoryPicker) {
-        showError('このブラウザはフォルダーの選択に対応していません。Google Chrome をお使いください（このままでも通常のダウンロードで保存できます）。');
+        showError('このブラウザはフォルダの選択に対応していません。Google Chrome をお使いください。');
         return;
       }
       try {
         saveDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-        try { await idbSet('saveDir', saveDirHandle); } catch (e) { console.warn('フォルダーを記憶できませんでした', e); }
         renderFolderName();
+        hideError();
         showToast(`保存先を「${saveDirHandle.name}」に設定しました。`, 4000);
       } catch (err) {
-        if (err.name !== 'AbortError') showError(`フォルダーを選べませんでした：${err.message}`);
+        if (err.name !== 'AbortError') showError(`フォルダを選べませんでした：${err.message}`);
       }
-    }
-
-    async function restoreSaveFolder() {
-      try {
-        const h = await idbGet('saveDir');
-        if (h) { saveDirHandle = h; renderFolderName(); }
-      } catch (e) { /* 記憶が使えない環境では未設定のまま */ }
     }
 
     // 書き込み許可の確認（ボタンを押した直後に呼ぶ必要がある）
@@ -975,6 +941,7 @@
         '  - 「会議の議事内容（本文）」の箇条書き：バー記号（-）',
         '  - 「会議情報」「使用資料・リンク」「ToDo」は箇条書きにせず、1行ずつ書く',
         '- 参加者・日時・使用資料は、依頼文の「会議情報」に入力された内容をそのまま使ってください（表記を変えない）。',
+        '- 使用資料・リンクは、URLをそのまま書かず、資料の名称にリンクを付けてください。Googleドキュメントで作る場合は、ファイルのスマートチップ（資料名とアイコンで表示されるリンク）にしてください。前回の議事録など補足がある資料は「（前回議事録）資料名」のように先頭に補足を付けてください。',
         '- 発言者の書き方：社外の方は「会社名（氏名様）」、自社の方は「会社名 氏名」。誰の発言か判断できない場合は会社名だけを書いてください。',
         '- 比較検討された事項や、質疑応答（Q&A）があった場合は、必ずマークダウンの表（テーブル）形式で整理して出力してください。表の中で発言がなかった欄は「言及なし」と書いてください。',
         '- ToDo の期限は、発言があった場合だけ書いてください。',
@@ -1002,6 +969,7 @@
         '',
         '## 使用資料・リンク',
         '[資料の名称](URL)',
+        '（前回議事録）[資料の名称](URL)',
         '',
         '## 会議の議事内容（本文）',
         '**1. [話題名]（[説明者]）**',
@@ -1179,11 +1147,12 @@
       const time = start || end ? `${start || '【要確認】'}～${end || '【要確認】'}` : '【要確認：開始・終了時刻】';
       const place = el('meetingPlace').value.trim();
       const participants = el('meetingParticipants').value.split('\n').map(s => s.trim()).filter(Boolean);
-      const materials = el('meetingMaterials').value.split('\n').map(s => s.trim()).filter(Boolean).map(line => {
+      const materials = el('meetingMaterials').value.split('\n').map(s => s.trim()).filter(Boolean).map((line, i) => {
         const urlMatch = line.match(/https?:\/\/\S+/);
         if (!urlMatch) return { name: line, url: '' };
         const name = line.replace(urlMatch[0], '').trim().replace(/[：:\s]+$/, '');
-        return { name: name || urlMatch[0], url: urlMatch[0] };
+        // 資料名がない場合はURLを見せず、仮の名前にする（Googleドキュメントではスマートチップで正式名が出る）
+        return { name: name || `資料${i + 1}（名称はリンク先のファイル名）`, url: urlMatch[0] };
       });
       return {
         dateTime: `${jpDate(date)} ${time}${place ? '　' + place : ''}`,
@@ -1218,6 +1187,7 @@
         '作成のルール：',
         '- 下の「議事録フォーマット」の見出しと順番に沿って書く',
         '- 「会議情報」「使用資料・リンク」の欄は、上の入力済みの情報をそのまま使う（表記を変えない）',
+        '- 使用資料はURLをそのまま書かず、資料名にリンクを付ける（Googleドキュメントではファイルのスマートチップにする）',
         '- 発言者の名前は、上の「参加者」の表記に合わせる。誰の発言か判断できない場合は会社名だけを書く',
         '- 音声と上の会議情報に出てこない数字・名前・決定事項は書かない',
         '- 聞き取れない箇所や判断できない箇所は【要確認】と書く',
@@ -1252,13 +1222,19 @@
         showError("MP3変換ライブラリが読み込まれていません。インターネット接続を確認してください。");
         return;
       }
+      // 保存先フォルダが選ばれていなければ注意を出して止める
+      if (!saveDirHandle) {
+        showError('保存先フォルダを選択してください（「議事録の準備」欄の「フォルダを選ぶ」から選べます）。');
+        el('saveFolderName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
       hideError();
 
-      // ボタンを押した直後にフォルダーの書き込み許可を確認する
-      let useFolder = false;
-      if (saveDirHandle) {
-        useFolder = await ensureFolderPermission();
-        if (!useFolder) showToast('保存先フォルダーへの書き込みが許可されなかったため、通常のダウンロードで保存します。', 5000);
+      // ボタンを押した直後にフォルダの書き込み許可を確認する
+      const useFolder = await ensureFolderPermission();
+      if (!useFolder) {
+        showError('保存先フォルダへの書き込みが許可されませんでした。もう一度フォルダを選択してください。');
+        return;
       }
 
       const title = el('meetingTitle').value.trim() || '会議';
@@ -1303,7 +1279,7 @@
         // Windows のメモ帳でも文字化けしないよう、先頭にBOMを付ける
         const txtBlob = new Blob(['﻿' + promptText], { type: 'text/plain;charset=utf-8' });
         const txtName = await saveBlob(`${base}_議事録依頼.txt`, txtBlob, useFolder);
-        const where = useFolder ? `「${saveDirHandle.name}」フォルダー` : 'ダウンロードフォルダー';
+        const where = `「${saveDirHandle.name}」フォルダ`;
         showToast(`議事録の準備ができました（${where}）。\n・${mp3Name}\n・${txtName}\nこの2つを NotebookLM か Claude に渡してください。`, 10000);
       } catch (e) {
         hideToast();
@@ -1314,7 +1290,7 @@
     // 起動時の読み込み
     loadFormats();
     renderFormatSelect();
-    restoreSaveFolder();
+    renderFolderName();
     restoreMeetingDraft();
 
   </script>
