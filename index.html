@@ -41,15 +41,15 @@
     <p id="toastText" class="whitespace-pre-wrap text-sm font-medium leading-relaxed"></p>
   </div>
 
-  <div class="max-w-4xl mx-auto p-6 space-y-6">
-    
-    <header class="rounded-2xl shadow-sm p-6 flex items-center space-x-4 border border-white/70" style="background: linear-gradient(120deg, #e9edf9 0%, #f3ecf6 50%, #eaf4ee 100%);">
+  <div class="max-w-6xl mx-auto p-4 sm:p-6 space-y-5">
+
+    <header class="rounded-2xl shadow-sm px-6 py-5 flex items-center space-x-4 border border-white/70" style="background: linear-gradient(120deg, #e9edf9 0%, #f3ecf6 50%, #eaf4ee 100%);">
       <div class="p-3 bg-white/80 text-blue-600 rounded-xl shadow-sm">
-        <i data-lucide="monitor" class="w-8 h-8"></i>
+        <i data-lucide="monitor" class="w-7 h-7"></i>
       </div>
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900">かんたんブラウザ録画 <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded ml-2 align-middle">Notebook対応</span></h1>
-        <p class="text-gray-500 text-sm mt-1">タブを録画し、用途に合わせて WebM / MP4 / MP3 のお好きな形式でダウンロードできます</p>
+      <div class="min-w-0">
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-900">かんたんブラウザ録画 <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded ml-2 align-middle">Notebook対応</span></h1>
+        <p class="text-gray-500 text-sm mt-1">タブを録画し、議事録の準備（音声＋依頼文）までをまとめて行えます</p>
       </div>
     </header>
 
@@ -58,245 +58,262 @@
       <p id="errorText"></p>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
-      <div class="p-4 border-b border-gray-100 bg-gray-50 flex items-center space-x-2 text-gray-700 font-semibold">
-        <i data-lucide="list-video" class="w-5 h-5"></i>
-        <span>保存された録画データ</span>
-      </div>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
 
-      <div class="p-6 flex flex-col items-center">
-        <div id="viewVideo" class="w-full max-w-3xl flex flex-col">
-          <div class="aspect-video w-full bg-blue-100 rounded-xl overflow-hidden flex items-center justify-center relative shadow-inner">
-            <video id="videoPlayer" controls class="hidden w-full h-full object-contain"></video>
-            <div id="videoPlaceholder" class="text-blue-500 flex flex-col items-center">
-              <i data-lucide="monitor-play" class="w-12 h-12 mb-2 opacity-50"></i>
-              <p>下のリストから「再生」ボタンを押すとプレビューが表示されます</p>
-            </div>
-          </div>
-        </div>
+      <!-- ===== 左列：録画の操作と詳細設定 ===== -->
+      <div class="lg:col-span-5 space-y-5 lg:sticky lg:top-6">
 
-        <div id="fileListContainer" class="w-full max-w-3xl mt-6 space-y-3">
-          <div id="emptyListMsg" class="text-center text-gray-400 text-sm py-8 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
-            <i data-lucide="folder-open" class="w-8 h-8 mx-auto mb-2 opacity-30"></i>
-            まだ保存されたデータはありません。<br>録画を終了するか分割すると、ここにファイルが追加されます。
-          </div>
-        </div>
-
-        <!-- 議事録の準備（分割された Part をまとめて1回で） -->
-        <div id="minutesAction" class="hidden w-full max-w-3xl mt-4">
-          <button onclick="prepareMinutes()" class="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl flex items-center justify-center space-x-2 transition-colors shadow-sm" title="音声と依頼文を保存先フォルダに保存">
-            <i data-lucide="file-text" class="w-5 h-5"></i>
-            <span id="minutesActionLabel">議事録の準備</span>
-          </button>
-          <p class="text-xs text-gray-500 mt-1.5 text-center">最後に録画した会議の Part をすべてまとめて、音声（MP3）1つと依頼文1つを作ります。</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 text-center max-w-3xl mx-auto w-full">
-      <div class="mb-6">
-        <div id="timeDisplay" class="text-5xl font-mono font-light text-gray-700 tracking-wider">00:00</div>
-        
-        <div id="recordingIndicator" class="mt-3 hidden flex items-center justify-center space-x-2 text-sm text-gray-500">
-          <span class="flex h-3 w-3 relative">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-          </span>
-          <span>現在のファイルの録画時間 (現在のサイズ: <span id="estimatedSizeText">0.0</span> MB)</span>
-        </div>
-        <p id="partIndicator" class="text-xs text-blue-600 font-bold mt-1 hidden">現在 Part 1 を録画中</p>
-      </div>
-
-      <div id="btnStartGroup">
-        <!-- マイク設定トグル -->
-        <div class="mb-5 bg-blue-50 p-4 rounded-xl border border-blue-100">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-              <div class="p-2 bg-blue-100 text-blue-600 rounded-lg flex-shrink-0">
-                <i data-lucide="mic" class="w-5 h-5"></i>
-              </div>
-              <div class="text-left">
-                <p class="font-bold text-gray-800 text-sm">自分の声（マイク）も同時に録音</p>
-                <p class="text-xs text-blue-600/80 mt-0.5">Web会議など、相手と自分の声を両方収録する場合にON</p>
-              </div>
-            </div>
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" id="micToggle" class="sr-only peer" onchange="toggleMicArea()">
-              <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 shadow-inner"></div>
-            </label>
-          </div>
-          
-          <!-- マイクの選択エリア（トグルON時に表示） -->
-          <div id="micSelectionArea" class="mt-4 pt-4 border-t border-blue-100/50 hidden text-left">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-sm font-bold text-gray-700 flex items-center">
-                使用するマイクを選択:
+        <section class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 text-center">
+          <div class="mb-5">
+            <div id="timeDisplay" class="text-5xl font-mono font-light text-gray-700 tracking-wider">00:00</div>
+            <div id="recordingIndicator" class="mt-3 hidden flex items-center justify-center space-x-2 text-sm text-gray-500">
+              <span class="flex h-3 w-3 relative">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
               </span>
-              <button onclick="loadMicrophones()" class="text-xs bg-white border border-blue-200 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition shadow-sm font-medium flex items-center">
-                <i data-lucide="refresh-cw" class="w-3 h-3 mr-1"></i>
-                リストを更新
-              </button>
+              <span>現在のサイズ: <span id="estimatedSizeText">0.0</span> MB</span>
             </div>
-            <select id="micSelect" class="w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0 bg-white cursor-pointer shadow-sm">
-              <option value="">デフォルトのマイク</option>
-            </select>
+            <p id="partIndicator" class="text-xs text-blue-600 font-bold mt-1 hidden">現在 Part 1 を録画中</p>
           </div>
-        </div>
 
-        <button onclick="startRecording()" class="w-full py-5 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xl shadow-lg shadow-blue-200 transition-all flex items-center justify-center space-x-3">
-          <i data-lucide="video" class="w-7 h-7"></i>
-          <span>録画を開始する</span>
-        </button>
+          <div id="btnStartGroup">
+            <div class="mb-4 bg-blue-50 p-3.5 rounded-xl border border-blue-100">
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center space-x-3 min-w-0">
+                  <div class="p-2 bg-blue-100 text-blue-600 rounded-lg flex-shrink-0">
+                    <i data-lucide="mic" class="w-5 h-5"></i>
+                  </div>
+                  <div class="text-left min-w-0">
+                    <p class="font-bold text-gray-800 text-sm">自分の声（マイク）も録音</p>
+                    <p class="text-xs text-blue-600/80 mt-0.5">相手と自分の声を両方残すときにON</p>
+                  </div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                  <input type="checkbox" id="micToggle" class="sr-only peer" onchange="toggleMicArea()">
+                  <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 shadow-inner"></div>
+                </label>
+              </div>
+
+              <div id="micSelectionArea" class="mt-3 pt-3 border-t border-blue-100/50 hidden text-left">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-bold text-gray-700">使用するマイク</span>
+                  <button onclick="loadMicrophones()" class="text-xs bg-white border border-blue-200 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition shadow-sm font-medium flex items-center">
+                    <i data-lucide="refresh-cw" class="w-3 h-3 mr-1"></i>リストを更新
+                  </button>
+                </div>
+                <select id="micSelect" class="w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0 bg-white cursor-pointer shadow-sm">
+                  <option value="">デフォルトのマイク</option>
+                </select>
+              </div>
+            </div>
+
+            <button onclick="startRecording()" class="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg shadow-lg shadow-blue-200 transition-all flex items-center justify-center space-x-3">
+              <i data-lucide="video" class="w-6 h-6"></i>
+              <span>録画を開始する</span>
+            </button>
+          </div>
+
+          <div id="btnRecordingGroup" class="hidden flex-col space-y-3">
+            <button onclick="triggerSplit()" class="w-full py-3.5 px-6 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl font-bold shadow-md shadow-yellow-200 transition-all flex items-center justify-center space-x-2">
+              <i data-lucide="scissors" class="w-5 h-5"></i>
+              <span>ここで手動分割（録画は継続）</span>
+            </button>
+            <button onclick="stopRecording()" class="w-full py-3.5 px-6 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold shadow-md shadow-red-200 transition-all flex items-center justify-center space-x-2">
+              <i data-lucide="stop-circle" class="w-5 h-5"></i>
+              <span>録画を完全に終了する</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- 詳細設定（ふだんは閉じておく） -->
+        <details class="bg-white rounded-2xl shadow-sm border border-gray-100 group overflow-hidden" id="qualityDetails">
+          <summary class="px-5 py-4 cursor-pointer font-medium text-gray-700 hover:text-gray-900 flex items-center justify-between transition-colors hover:bg-gray-50 list-none outline-none">
+            <span class="flex items-center space-x-2"><i data-lucide="settings" class="w-5 h-5"></i><span>詳細設定（マイク・画質・自動分割）</span></span>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180"></i>
+          </summary>
+          <div class="p-5 border-t border-gray-100 bg-gray-50/50 space-y-5">
+
+            <div>
+              <label class="block font-bold text-gray-900 mb-2 text-sm flex items-center space-x-2">
+                <i data-lucide="mic" class="w-4 h-4 text-gray-500"></i><span>マイクの高音質設定（ノイズキャンセル）</span>
+              </label>
+              <select id="micNoiseCancellation" class="w-full p-2.5 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 transition-colors bg-white cursor-pointer shadow-sm text-sm">
+                <option value="on" selected>ON / 標準（エコーや雑音を自動で防ぎます）</option>
+                <option value="off">OFF / 高音質（声のこもりを解消。※イヤホン必須）</option>
+              </select>
+              <p class="text-xs text-gray-500 mt-1.5">※OFFにすると声がクリアになりますが、スピーカーの音を拾ってエコーが出やすくなります。必ずイヤホンをご使用ください。</p>
+            </div>
+
+            <div class="border-t border-gray-100 pt-5">
+              <label class="block font-bold text-gray-900 mb-2 text-sm flex items-center space-x-2">
+                <i data-lucide="cpu" class="w-4 h-4 text-gray-500"></i><span>録画コーデック（圧縮方式）</span>
+              </label>
+              <select id="codecPreference" class="w-full p-2.5 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 transition-colors bg-white cursor-pointer shadow-sm text-sm">
+                <option value="h264" selected>H.264（推奨：PCで再生しやすい）</option>
+                <option value="vp89">VP8 / VP9（標準：プレーヤーと相性が悪い場合あり）</option>
+              </select>
+            </div>
+
+            <div class="border-t border-gray-100 pt-5">
+              <label class="block font-bold text-gray-900 mb-2 text-sm flex items-center space-x-2">
+                <i data-lucide="image" class="w-4 h-4 text-gray-500"></i><span>画質設定</span>
+              </label>
+              <div class="space-y-2" id="qualityInputs"></div>
+            </div>
+
+            <div class="border-t border-gray-100 pt-5">
+              <label class="block font-bold text-gray-900 mb-2 text-sm flex items-center space-x-2">
+                <i data-lucide="clock" class="w-4 h-4 text-gray-500"></i><span>自動分割設定</span>
+              </label>
+              <select id="autoSplitInterval" class="w-full p-2.5 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 transition-colors bg-white cursor-pointer shadow-sm text-sm">
+                <option value="60" selected>60分ごとに自動分割する</option>
+                <option value="0">今回は自動分割しない</option>
+              </select>
+              <p class="text-xs text-gray-500 mt-1.5">※どちらを選んでも、ファイルが190MBに達したときは200MBを超えないよう自動で分割します。</p>
+            </div>
+
+          </div>
+        </details>
       </div>
-      
-      <div id="btnRecordingGroup" class="hidden flex-col space-y-4">
-        <button onclick="triggerSplit()" class="w-full py-4 px-6 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl font-bold text-lg shadow-md shadow-yellow-200 transition-all flex items-center justify-center space-x-2">
-          <i data-lucide="scissors" class="w-6 h-6"></i>
-          <span>ここで手動分割（録画は継続する）</span>
-        </button>
-        <button onclick="stopRecording()" class="w-full py-4 px-6 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold text-lg shadow-md shadow-red-200 transition-all flex items-center justify-center space-x-2">
-          <i data-lucide="stop-circle" class="w-6 h-6"></i>
-          <span>録画を完全に終了する</span>
-        </button>
+
+      <!-- ===== 右列：録画データと議事録の準備 ===== -->
+      <div class="lg:col-span-7 space-y-5">
+
+        <section class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div class="px-5 py-4 border-b border-gray-100 bg-gray-50 flex items-center space-x-2 text-gray-700 font-semibold">
+            <i data-lucide="list-video" class="w-5 h-5"></i>
+            <span>保存された録画データ</span>
+          </div>
+
+          <div class="p-5 space-y-3">
+            <!-- プレビュー（「再生」を押したときだけ表示） -->
+            <div id="viewVideo" class="hidden">
+              <div class="aspect-video w-full bg-blue-100 rounded-xl overflow-hidden flex items-center justify-center relative shadow-inner">
+                <video id="videoPlayer" controls class="hidden w-full h-full object-contain"></video>
+                <div id="videoPlaceholder" class="text-blue-500 flex flex-col items-center">
+                  <i data-lucide="monitor-play" class="w-10 h-10 mb-2 opacity-50"></i>
+                  <p class="text-sm">プレビュー</p>
+                </div>
+              </div>
+            </div>
+
+            <div id="fileListContainer" class="space-y-3">
+              <div id="emptyListMsg" class="text-center text-gray-400 text-sm py-6 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                <i data-lucide="folder-open" class="w-7 h-7 mx-auto mb-2 opacity-30"></i>
+                まだ保存されたデータはありません。<br>録画を終了するか分割すると、ここに追加されます。
+              </div>
+            </div>
+
+            <!-- 議事録の準備（分割された Part をまとめて1回で） -->
+            <div id="minutesAction" class="hidden pt-1">
+              <button onclick="prepareMinutes()" class="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl flex items-center justify-center space-x-2 transition-colors shadow-sm" title="音声と依頼文を保存先フォルダに保存">
+                <i data-lucide="file-text" class="w-5 h-5"></i>
+                <span id="minutesActionLabel">議事録の準備</span>
+              </button>
+              <p class="text-xs text-gray-500 mt-1.5 text-center">最後に録画した会議の Part をすべてまとめて、音声（MP3）1つと依頼文1つを作ります。</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 議事録の準備（会議情報・保存先・フォーマット） -->
+        <section class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div class="px-5 py-4 border-b border-gray-100 bg-gray-50">
+            <div class="flex items-center space-x-2 text-gray-700 font-semibold">
+              <i data-lucide="file-text" class="w-5 h-5 text-emerald-600"></i>
+              <span>議事録の準備</span>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">ここで入力した内容が依頼文に入り、そのまま議事録に反映されます。</p>
+          </div>
+
+          <div class="p-5 space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="meetingTitle" class="block text-sm font-bold text-gray-700 mb-1">会議名</label>
+                <input id="meetingTitle" type="text" placeholder="例：メディカル本部 定例" class="meeting-field w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0">
+              </div>
+              <div>
+                <label for="meetingPlace" class="block text-sm font-bold text-gray-700 mb-1">場所</label>
+                <input id="meetingPlace" type="text" placeholder="例：オンライン" class="meeting-field w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0">
+              </div>
+            </div>
+
+            <div>
+              <span class="block text-sm font-bold text-gray-700 mb-1">日時</span>
+              <div class="grid grid-cols-1 sm:grid-cols-[1.4fr_1fr_auto_1fr] gap-2 items-center">
+                <input id="meetingDate" type="date" aria-label="会議の日付" class="meeting-field w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0 bg-white">
+                <input id="meetingStart" type="time" aria-label="開始時刻" class="meeting-field w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0 bg-white">
+                <span class="hidden sm:block text-gray-400 text-sm text-center">～</span>
+                <input id="meetingEnd" type="time" aria-label="終了時刻" class="meeting-field w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0 bg-white">
+              </div>
+              <p class="text-xs text-gray-500 mt-1">日付が空欄のときは録画した日を使います。</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="meetingParticipants" class="block text-sm font-bold text-gray-700 mb-1">参加者（会社ごとに1行）</label>
+                <textarea id="meetingParticipants" rows="3" placeholder="例：&#10;〇〇株式会社：〇〇様、〇〇様&#10;株式会社CureApp：〇〇、〇〇" class="meeting-field w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0"></textarea>
+                <p class="text-xs text-gray-500 mt-1">この表記のまま議事録に入り、発言者名もこれに合わせます。</p>
+              </div>
+              <div>
+                <label for="meetingMaterials" class="block text-sm font-bold text-gray-700 mb-1">使用資料のリンク（1行に1つ）</label>
+                <textarea id="meetingMaterials" rows="3" placeholder="例：&#10;〇〇資料 https://〜&#10;〇〇議事録 https://〜" class="meeting-field w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0"></textarea>
+                <p class="text-xs text-gray-500 mt-1">「資料名 URL」の形で。URLだけでも大丈夫です。</p>
+              </div>
+            </div>
+
+            <div class="flex justify-end">
+              <button onclick="clearMeetingInfo()" class="text-xs bg-white border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition shadow-sm font-medium">会議情報の入力をクリア</button>
+            </div>
+
+            <div class="border-t border-gray-100 pt-4">
+              <div class="flex items-center justify-between mb-1 gap-2">
+                <span class="text-sm font-bold text-gray-700">保存先フォルダ</span>
+                <button onclick="chooseSaveFolder()" class="text-xs bg-white border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-50 transition shadow-sm font-medium flex items-center">
+                  <i data-lucide="folder-open" class="w-3 h-3 mr-1"></i>フォルダを選ぶ
+                </button>
+              </div>
+              <p id="saveFolderName" class="text-sm text-gray-600 bg-gray-50 rounded-lg p-2.5 border border-gray-200">未選択</p>
+              <p class="text-xs text-gray-500 mt-1">会議ごとに、音声と依頼文を保存するフォルダを選んでください。</p>
+            </div>
+
+            <div class="border-t border-gray-100 pt-4">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                <span class="text-sm font-bold text-gray-700">議事録フォーマット</span>
+                <div class="flex flex-wrap gap-2">
+                  <button onclick="el('formatFileInput').click()" class="text-xs bg-white border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-50 transition shadow-sm font-medium flex items-center">
+                    <i data-lucide="file-up" class="w-3 h-3 mr-1"></i>ファイルから読み込む
+                  </button>
+                  <button onclick="openFormatEditor()" class="text-xs bg-white border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-50 transition shadow-sm font-medium flex items-center">
+                    <i data-lucide="clipboard-paste" class="w-3 h-3 mr-1"></i>貼り付けて登録
+                  </button>
+                  <button id="deleteFormatBtn" onclick="deleteSelectedFormat()" class="text-xs bg-white border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-red-50 hover:text-red-600 transition shadow-sm font-medium flex items-center disabled:opacity-40 disabled:pointer-events-none">
+                    <i data-lucide="trash-2" class="w-3 h-3 mr-1"></i>削除
+                  </button>
+                </div>
+              </div>
+              <input type="file" id="formatFileInput" accept=".txt,.md,text/plain,text/markdown" class="hidden" onchange="importFormatFile(event)">
+              <select id="formatSelect" onchange="onFormatSelected()" class="w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0 bg-white cursor-pointer shadow-sm"></select>
+              <details class="mt-2 group/preview">
+                <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-700 list-none flex items-center gap-1">
+                  <i data-lucide="chevron-right" class="w-3 h-3 transition-transform group-open/preview:rotate-90"></i>フォーマットの中身を見る
+                </summary>
+                <pre id="formatPreview" class="mt-2 max-h-56 overflow-auto text-xs whitespace-pre-wrap bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-700 font-sans"></pre>
+              </details>
+
+              <div id="formatEditor" class="hidden mt-3 p-4 bg-emerald-50 border border-emerald-100 rounded-xl space-y-2">
+                <input id="formatNameInput" type="text" placeholder="フォーマット名（例：定例会議用）" class="w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0">
+                <textarea id="formatBodyInput" rows="10" placeholder="ここに議事録のひな形を貼り付けてください" class="w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0"></textarea>
+                <div class="flex justify-end gap-2">
+                  <button onclick="closeFormatEditor()" class="text-sm bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50">キャンセル</button>
+                  <button onclick="registerFormat()" class="text-sm bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 font-bold">登録する</button>
+                </div>
+              </div>
+              <p class="text-xs text-gray-500 mt-2">※読み込めるのはテキスト形式（.txt / .md）です。フォーマットはこのPCのブラウザ内にだけ保存され、外部には送られません。</p>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
-
-    <!-- 議事録の準備 -->
-    <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 max-w-3xl mx-auto w-full space-y-6">
-      <div>
-        <div class="flex items-center space-x-2 text-gray-900 font-bold">
-          <i data-lucide="file-text" class="w-5 h-5 text-emerald-600"></i>
-          <span>議事録の準備</span>
-        </div>
-        <p class="text-xs text-gray-500 mt-1">録画リストの下の「議事録の準備」を押すと、音声（MP3）と依頼文（選んだフォーマット入り）を保存先フォルダに保存します。分割された録画も1回でまとめて作ります。</p>
-      </div>
-
-      <div>
-        <label for="meetingTitle" class="block text-sm font-bold text-gray-700 mb-1">会議名（ファイル名と依頼文に入ります）</label>
-        <input id="meetingTitle" type="text" placeholder="例：メディカル本部 定例" class="meeting-field w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0">
-      </div>
-
-      <div>
-        <span class="block text-sm font-bold text-gray-700 mb-1">日時・場所</span>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <input id="meetingDate" type="date" aria-label="会議の日付" class="meeting-field col-span-2 sm:col-span-1 p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0 bg-white">
-          <input id="meetingStart" type="time" aria-label="開始時刻" class="meeting-field p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0 bg-white">
-          <input id="meetingEnd" type="time" aria-label="終了時刻" class="meeting-field p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0 bg-white">
-          <input id="meetingPlace" type="text" placeholder="場所（例：オンライン）" class="meeting-field col-span-2 sm:col-span-1 p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0">
-        </div>
-        <p class="text-xs text-gray-500 mt-1">日付が空欄のときは録画した日を使います。時刻は「開始」「終了」の順です。</p>
-      </div>
-
-      <div>
-        <label for="meetingParticipants" class="block text-sm font-bold text-gray-700 mb-1">参加者（会社ごとに1行）</label>
-        <textarea id="meetingParticipants" rows="3" placeholder="例：&#10;〇〇株式会社：〇〇様、〇〇様&#10;株式会社CureApp：〇〇、〇〇" class="meeting-field w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0"></textarea>
-        <p class="text-xs text-gray-500 mt-1">ここに書いた表記のまま議事録に入ります。発言者の名前もこの表記に合わせます。</p>
-      </div>
-
-      <div>
-        <label for="meetingMaterials" class="block text-sm font-bold text-gray-700 mb-1">使用資料のリンク（1行に1つ）</label>
-        <textarea id="meetingMaterials" rows="3" placeholder="例：&#10;〇〇資料 https://〜&#10;〇〇議事録 https://〜" class="meeting-field w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0"></textarea>
-        <div class="flex items-center justify-between mt-1 gap-2">
-          <p class="text-xs text-gray-500">「資料名 URL」の形で書いてください。URLだけでも大丈夫です。</p>
-          <button onclick="clearMeetingInfo()" class="text-xs bg-white border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition shadow-sm font-medium flex-shrink-0">入力をクリア</button>
-        </div>
-      </div>
-
-      <div>
-        <div class="flex items-center justify-between mb-1">
-          <span class="text-sm font-bold text-gray-700">保存先フォルダ</span>
-          <button onclick="chooseSaveFolder()" class="text-xs bg-white border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-50 transition shadow-sm font-medium flex items-center">
-            <i data-lucide="folder-open" class="w-3 h-3 mr-1"></i>フォルダを選ぶ
-          </button>
-        </div>
-        <p id="saveFolderName" class="text-sm text-gray-600 bg-gray-50 rounded-lg p-2.5 border border-gray-200">未選択</p>
-        <p class="text-xs text-gray-500 mt-1">会議ごとに、音声と依頼文を保存するフォルダを選んでください。</p>
-      </div>
-
-      <div>
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
-          <span class="text-sm font-bold text-gray-700">議事録フォーマット</span>
-          <div class="flex flex-wrap gap-2">
-            <button onclick="el('formatFileInput').click()" class="text-xs bg-white border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-50 transition shadow-sm font-medium flex items-center">
-              <i data-lucide="file-up" class="w-3 h-3 mr-1"></i>ファイルから読み込む
-            </button>
-            <button onclick="openFormatEditor()" class="text-xs bg-white border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-50 transition shadow-sm font-medium flex items-center">
-              <i data-lucide="clipboard-paste" class="w-3 h-3 mr-1"></i>貼り付けて登録
-            </button>
-            <button id="deleteFormatBtn" onclick="deleteSelectedFormat()" class="text-xs bg-white border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-red-50 hover:text-red-600 transition shadow-sm font-medium flex items-center disabled:opacity-40 disabled:pointer-events-none">
-              <i data-lucide="trash-2" class="w-3 h-3 mr-1"></i>削除
-            </button>
-          </div>
-        </div>
-        <input type="file" id="formatFileInput" accept=".txt,.md,text/plain,text/markdown" class="hidden" onchange="importFormatFile(event)">
-        <select id="formatSelect" onchange="onFormatSelected()" class="w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0 bg-white cursor-pointer shadow-sm"></select>
-        <pre id="formatPreview" class="mt-2 max-h-48 overflow-auto text-xs whitespace-pre-wrap bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-700 font-sans"></pre>
-
-        <div id="formatEditor" class="hidden mt-3 p-4 bg-emerald-50 border border-emerald-100 rounded-xl space-y-2">
-          <input id="formatNameInput" type="text" placeholder="フォーマット名（例：定例会議用）" class="w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0">
-          <textarea id="formatBodyInput" rows="10" placeholder="ここに議事録のひな形を貼り付けてください" class="w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0"></textarea>
-          <div class="flex justify-end gap-2">
-            <button onclick="closeFormatEditor()" class="text-sm bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50">キャンセル</button>
-            <button onclick="registerFormat()" class="text-sm bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 font-bold">登録する</button>
-          </div>
-        </div>
-        <p class="text-xs text-gray-500 mt-2">※読み込めるのはテキスト形式（.txt / .md）です。Googleドキュメントのひな形は「ファイル → ダウンロード → 書式なしテキスト（.txt）」で保存してから読み込んでください。フォーマットはこのPCのブラウザ内にだけ保存され、外部には送られません。</p>
-      </div>
-    </div>
-
-    <!-- 詳細設定（デフォルトで開いておく） -->
-    <details class="bg-white rounded-2xl shadow-sm border border-gray-100 group overflow-hidden" id="qualityDetails" open>
-      <summary class="p-4 cursor-pointer font-medium text-gray-700 hover:text-gray-900 flex items-center justify-center space-x-2 transition-colors hover:bg-gray-50 list-none outline-none">
-        <i data-lucide="settings" class="w-5 h-5"></i>
-        <span>詳細設定 (マイク・画質・自動分割)</span>
-      </summary>
-      <div class="p-6 border-t border-gray-100 bg-gray-50/50">
-        <div class="max-w-3xl mx-auto">
-          
-          <div class="mb-6">
-            <label class="block font-bold text-gray-900 mb-2 flex items-center space-x-2">
-              <i data-lucide="mic" class="w-5 h-5 text-gray-500"></i>
-              <span>マイクの高音質設定（ノイズキャンセル）</span>
-            </label>
-            <select id="micNoiseCancellation" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 transition-colors bg-white cursor-pointer shadow-sm">
-              <option value="on" selected>ON / 標準（エコーや雑音を自動で防ぎます）</option>
-              <option value="off">OFF / 高音質（声のこもりを解消。※イヤホン必須）</option>
-            </select>
-            <p class="text-xs text-gray-500 mt-2">※OFFにすると声がクリアになりますが、PCのスピーカーの音を拾って「やまびこ（エコー）」が発生しやすくなります。必ずイヤホンをご使用ください。</p>
-          </div>
-
-          <div class="mb-6 border-t border-gray-100 pt-6">
-            <label class="block font-bold text-gray-900 mb-2 flex items-center space-x-2">
-              <i data-lucide="cpu" class="w-5 h-5 text-gray-500"></i>
-              <span>録画コーデック（圧縮方式）設定</span>
-            </label>
-            <select id="codecPreference" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 transition-colors bg-white cursor-pointer shadow-sm">
-              <option value="h264" selected>H.264 コーデック (推奨: PCのメディアプレーヤーで再生しやすく、互換性が高い)</option>
-              <option value="vp89">VP8 / VP9 コーデック (標準: 安定していますがメディアプレーヤーと相性が悪い場合があります)</option>
-            </select>
-          </div>
-
-          <label class="block font-bold text-gray-900 mb-2 flex items-center space-x-2 border-t border-gray-100 pt-6">
-            <i data-lucide="image" class="w-5 h-5 text-gray-500"></i>
-            <span>画質設定</span>
-          </label>
-          <div class="space-y-3" id="qualityInputs"></div>
-
-          <div class="mt-6 border-t border-gray-100 pt-6">
-            <label class="block font-bold text-gray-900 mb-2 flex items-center space-x-2">
-              <i data-lucide="clock" class="w-5 h-5 text-gray-500"></i>
-              <span>自動分割設定</span>
-            </label>
-            <select id="autoSplitInterval" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 transition-colors bg-white cursor-pointer shadow-sm">
-              <option value="60" selected>60分ごとに自動分割する</option>
-              <option value="0">今回は自動分割しない</option>
-            </select>
-            <p class="text-xs text-gray-500 mt-2">※どちらを選んでも、ファイルが190MBに達したときは200MBを超えないよう自動で分割します。</p>
-          </div>
-
-        </div>
-      </div>
-    </details>
 
   </div>
 
@@ -488,10 +505,10 @@
 
       [...recordedFiles].reverse().forEach(file => {
         const div = document.createElement('div');
-        div.className = "file-item flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 transition-colors shadow-sm gap-4";
+        div.className = "file-item flex flex-col p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 transition-colors shadow-sm gap-3";
 
         div.innerHTML = `
-          <div class="flex items-center space-x-4 w-full lg:flex-1 min-w-0">
+          <div class="flex items-center space-x-4 w-full min-w-0">
             <button onclick="playVideo('${file.url}')" class="p-3 bg-blue-50 rounded-lg shadow-sm text-blue-600 hover:bg-blue-600 hover:text-white transition-all flex-shrink-0" title="プレビュー再生">
               <i data-lucide="play" class="w-6 h-6"></i>
             </button>
@@ -504,7 +521,7 @@
             </div>
           </div>
           
-          <div class="flex flex-col sm:flex-row flex-wrap gap-2 w-full lg:w-auto justify-end">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
             <button onclick="downloadFile(${file.id}, 'webm')" class="flex-1 sm:flex-none py-2.5 px-3 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-semibold rounded-lg flex items-center justify-center space-x-1.5 transition-colors border border-gray-300" title="ブラウザやPC再生用">
               <i data-lucide="monitor-play" class="w-4 h-4 text-blue-600"></i>
               <span>動画 (.webm)</span>
@@ -526,6 +543,7 @@
 
     function playVideo(url) {
       const videoPlayer = el('videoPlayer');
+      el('viewVideo').classList.remove('hidden');
       videoPlayer.src = url;
       videoPlayer.classList.remove('hidden');
       el('videoPlaceholder').classList.add('hidden');
