@@ -49,7 +49,7 @@
       </div>
       <div class="min-w-0">
         <h1 class="text-xl sm:text-2xl font-bold text-gray-900">かんたんブラウザ録画 <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded ml-2 align-middle">Notebook対応</span></h1>
-        <p class="text-gray-500 text-sm mt-1">タブを録画し、議事録の準備（音声＋依頼文）までをまとめて行えます</p>
+        <p class="text-gray-500 text-sm mt-1">タブ・ウィンドウ・画面全体を録画して、議事録の準備（音声＋依頼文）までまとめて行えます</p>
       </div>
     </header>
 
@@ -58,10 +58,10 @@
       <p id="errorText"></p>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
 
-      <!-- ===== 左列：録画の操作と詳細設定 ===== -->
-      <div class="lg:col-span-5 space-y-5 lg:sticky lg:top-6">
+      <!-- ===== 左列：録画の操作と詳細設定（右列と下端をそろえる） ===== -->
+      <div class="lg:col-span-5 flex flex-col gap-5">
 
         <section class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 text-center">
           <div class="mb-5">
@@ -125,13 +125,13 @@
           </div>
         </section>
 
-        <!-- 詳細設定（ふだんは閉じておく） -->
-        <details class="bg-white rounded-2xl shadow-sm border border-gray-100 group overflow-hidden" id="qualityDetails">
+        <!-- 詳細設定（最初から開いておく） -->
+        <details class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 group overflow-hidden" id="qualityDetails" open>
           <summary class="px-5 py-4 cursor-pointer font-medium text-gray-700 hover:text-gray-900 flex items-center justify-between transition-colors hover:bg-gray-50 list-none outline-none">
             <span class="flex items-center space-x-2"><i data-lucide="settings" class="w-5 h-5"></i><span>詳細設定（マイク・画質・自動分割）</span></span>
             <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180"></i>
           </summary>
-          <div class="p-5 border-t border-gray-100 bg-gray-50/50 space-y-5">
+          <div class="p-5 border-t border-gray-100 space-y-5">
 
             <div>
               <label class="block font-bold text-gray-900 mb-2 text-sm flex items-center space-x-2">
@@ -177,7 +177,7 @@
       </div>
 
       <!-- ===== 右列：録画データと議事録の準備 ===== -->
-      <div class="lg:col-span-7 space-y-5">
+      <div class="lg:col-span-7 flex flex-col gap-5">
 
         <section class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div class="px-5 py-4 border-b border-gray-100 bg-gray-50 flex items-center space-x-2 text-gray-700 font-semibold">
@@ -216,7 +216,7 @@
         </section>
 
         <!-- 議事録の準備（会議情報・保存先・フォーマット） -->
-        <section class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <section class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div class="px-5 py-4 border-b border-gray-100 bg-gray-50">
             <div class="flex items-center space-x-2 text-gray-700 font-semibold">
               <i data-lucide="file-text" class="w-5 h-5 text-emerald-600"></i>
@@ -248,7 +248,7 @@
               <p class="text-xs text-gray-500 mt-1">日付が空欄のときは録画した日を使います。</p>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="space-y-4">
               <div>
                 <label for="meetingParticipants" class="block text-sm font-bold text-gray-700 mb-1">参加者（会社ごとに1行）</label>
                 <textarea id="meetingParticipants" rows="3" placeholder="例：&#10;〇〇株式会社：〇〇様、〇〇様&#10;株式会社CureApp：〇〇、〇〇" class="meeting-field w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-blue-500 focus:ring-0"></textarea>
@@ -362,15 +362,15 @@
       for (const [key, setting] of Object.entries(QUALITY_SETTINGS)) {
         const isChecked = quality === key;
         const div = document.createElement('label');
-        div.className = `flex items-start p-4 rounded-xl border-2 cursor-pointer transition-colors ${isChecked ? 'border-blue-500 bg-white shadow-sm' : 'border-gray-200 hover:border-gray-300 bg-white'}`;
+        div.className = `flex items-start p-3 rounded-xl border-2 cursor-pointer transition-colors ${isChecked ? 'border-blue-500 bg-white shadow-sm' : 'border-gray-200 hover:border-gray-300 bg-white'}`;
         div.innerHTML = `
           <input type="radio" name="quality" value="${key}" ${isChecked ? 'checked' : ''} onchange="changeQuality('${key}')" class="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500" />
-          <div class="ml-3 flex-1">
-            <div class="flex justify-between items-center">
-              <span class="font-medium text-gray-900">${setting.label}</span>
-              <span class="text-sm font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded-md">約 ${setting.estimatedPerMin} MB / 分</span>
+          <div class="ml-3 flex-1 min-w-0">
+            <div class="flex justify-between items-center gap-2">
+              <span class="font-medium text-gray-900 text-sm">${setting.label}</span>
+              <span class="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md flex-shrink-0">約 ${setting.estimatedPerMin} MB / 分</span>
             </div>
-            <p class="text-sm text-gray-500 mt-1">${setting.description}</p>
+            <p class="text-xs text-gray-500 mt-1">${setting.description}</p>
           </div>
         `;
         container.appendChild(div);
@@ -479,6 +479,7 @@
         el('recordingIndicator').classList.add('hidden');
         el('partIndicator').classList.add('hidden');
         el('qualityDetails').classList.remove('opacity-50', 'pointer-events-none');
+        el('qualityDetails').setAttribute('open', '');
       }
     }
 
@@ -687,7 +688,12 @@
       try {
         originalDisplayStream = await navigator.mediaDevices.getDisplayMedia({
           video: { displaySurface: 'browser', frameRate: { ideal: QUALITY_SETTINGS[quality].fps, max: QUALITY_SETTINGS[quality].fps } },
-          audio: true, 
+          audio: { suppressLocalAudioPlayback: false },
+          // 画面全体・ウィンドウを選んだときも「システムの音声を共有」を選べるようにする（Chrome向けの指定）
+          systemAudio: 'include',
+          windowAudio: 'system',
+          surfaceSwitching: 'include',
+          selfBrowserSurface: 'exclude'
         });
 
         const enableMic = el('micToggle').checked;
